@@ -211,7 +211,7 @@ export default function CrawlerTab({ onCrawlSuccess, showToast }: CrawlerTabProp
           </div>
 
           {/* Console Output */}
-          <div className="bg-slate-950/80 border border-white/5 rounded-xl p-4 h-64 overflow-y-auto font-mono text-xs text-sky-400 space-y-1.5 scrollbar-thin">
+          <div className="bg-slate-950/80 border border-white/5 rounded-xl p-4 h-48 sm:h-64 overflow-y-auto font-mono text-xs text-sky-400 space-y-1.5 scrollbar-thin">
             {consoleLogs.map((log, idx) => (
               <div key={idx} className={`leading-relaxed border-l-2 pl-2 ${log.type === 'success' ? 'text-emerald-400 border-emerald-500/40' :
                   log.type === 'error' ? 'text-rose-400 border-rose-500/40' :
@@ -228,8 +228,8 @@ export default function CrawlerTab({ onCrawlSuccess, showToast }: CrawlerTabProp
       )}
 
       {/* History Card */}
-      <div className="glass-panel rounded-2xl p-6 shadow-xl relative overflow-hidden">
-        <div className="flex justify-between items-center mb-6">
+      <div className="glass-panel rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
             <Clock className="w-5 h-5 text-primary" />
             Lịch sử quét
@@ -237,7 +237,7 @@ export default function CrawlerTab({ onCrawlSuccess, showToast }: CrawlerTabProp
           {history.length > 0 && (
             <button
               onClick={() => setShowClearHistoryConfirm(true)}
-              className="text-xs text-rose-400 border border-rose-500/20 hover:bg-rose-500/10 px-3.5 py-2 rounded-xl transition-all duration-200 flex items-center gap-1.5 cursor-pointer font-medium"
+              className="text-xs text-rose-400 border border-rose-500/20 hover:bg-rose-500/10 px-3.5 py-2 rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer font-medium self-start sm:self-auto"
             >
               <Trash2 className="w-4 h-4" />
               Xóa lịch sử

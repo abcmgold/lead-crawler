@@ -142,17 +142,17 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
         </div>
 
         {/* Buttons */}
-        <div className="flex gap-3 justify-end shrink-0">
+        <div className="flex flex-col sm:flex-row gap-3 sm:justify-end shrink-0">
           <button
             onClick={handleExportCSV}
-            className="bg-slate-900/60 hover:bg-slate-900 border border-white/10 hover:border-white/20 text-slate-200 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2 cursor-pointer font-sans"
+            className="bg-slate-900/60 hover:bg-slate-900 border border-white/10 hover:border-white/20 text-slate-200 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer font-sans"
           >
             <Download className="w-4 h-4" />
             Xuất CSV
           </button>
           <button
             onClick={onClearAll}
-            className="text-rose-400 border border-rose-500/20 hover:bg-rose-500/10 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2 cursor-pointer font-sans"
+            className="text-rose-400 border border-rose-500/20 hover:bg-rose-500/10 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer font-sans"
           >
             <Trash2 className="w-4 h-4" />
             Xóa tất cả
@@ -249,9 +249,9 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
         </div>
 
         {/* Pagination Footer */}
-        <div className="bg-slate-900/30 border-t border-white/5 px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-slate-900/30 border-t border-white/5 px-4 py-4 flex flex-col lg:flex-row items-center justify-between gap-4">
           {/* Info + page size */}
-          <div className="flex items-center gap-4 text-xs text-slate-400 font-mono">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-slate-400 font-mono">
             <span>
               {filteredLeads.length === 0 ? (
                 'Không có dữ liệu'
@@ -285,7 +285,7 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
 
           {/* Pagination controls */}
           {totalPages > 1 && (
-            <Pagination className="w-auto mx-0">
+            <Pagination className="w-auto mx-0 max-w-full overflow-x-auto scrollbar-none">
               <PaginationContent className="gap-0.5">
                 {/* First page */}
                 <PaginationItem>

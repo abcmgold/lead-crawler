@@ -296,7 +296,7 @@ export default function CampaignTab({ selectedLeads, onRemoveLead, smtpSettings,
             </div>
           )}
 
-          <div className="bg-slate-950/80 border border-white/5 rounded-xl p-4 h-[420px] overflow-y-auto font-mono text-xs text-sky-400 space-y-1.5 scrollbar-thin flex-1">
+          <div className="bg-slate-950/80 border border-white/5 rounded-xl p-4 h-[280px] lg:h-[420px] overflow-y-auto font-mono text-xs text-sky-400 space-y-1.5 scrollbar-thin flex-1">
             {logs.length === 0 ? (
               <div className="text-slate-600 font-mono py-8 text-center">Chưa khởi tạo chiến dịch gửi email nào.</div>
             ) : (

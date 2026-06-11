@@ -120,13 +120,13 @@ export default function App() {
       <div className="w-full z-10 relative flex-1 flex flex-col">
 
         {/* Top Floating Glass Navigation Header */}
-        <header className="w-full max-w-7xl mx-auto px-4 pt-6 shrink-0 sticky top-0 z-50 backdrop-blur-md">
-          <div className="glass-panel rounded-2xl px-6 py-4 flex items-center justify-between shadow-2xl relative">
+        <header className="w-full max-w-7xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6 shrink-0 sticky top-0 z-50 backdrop-blur-md">
+          <div className="glass-panel rounded-2xl px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shadow-2xl relative">
 
             {/* Logo Area */}
-            <div className="flex items-center gap-3 select-none">
-              <Cpu className="w-7 h-7 text-primary animate-pulse" />
-              <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-pink-400 to-purple-400 bg-clip-text text-transparent glow-text font-mono uppercase">
+            <div className="flex items-center gap-2 sm:gap-3 select-none">
+              <Cpu className="w-6 h-6 sm:w-7 sm:h-7 text-primary animate-pulse" />
+              <span className="text-base sm:text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-pink-400 to-purple-400 bg-clip-text text-transparent glow-text font-mono uppercase">
                 LeadCrawler
               </span>
             </div>
@@ -152,7 +152,7 @@ export default function App() {
             </nav>
 
             {/* Status indicators */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="hidden lg:flex items-center gap-2 bg-slate-950/60 border border-white/10 px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 font-mono shadow-inner select-none">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 SMTP: {smtpSettings.host ? 'OK' : 'CHƯA CẤU HÌNH'}
@@ -160,7 +160,7 @@ export default function App() {
               <button
                 onClick={() => setShowLogoutConfirm(true)}
                 title={`Đăng xuất (${user.username})`}
-                className="flex items-center justify-center w-9 h-9 bg-slate-950/60 border border-white/10 rounded-xl text-slate-300 hover:text-rose-300 hover:border-rose-500/30 transition-colors duration-300 cursor-pointer select-none"
+                className="flex items-center justify-center w-9 h-9 shrink-0 bg-slate-950/60 border border-white/10 rounded-xl text-slate-300 hover:text-rose-300 hover:border-rose-500/30 transition-colors duration-300 cursor-pointer select-none"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -190,47 +190,47 @@ export default function App() {
         </header>
 
         {/* Stats Bento Grid Header */}
-        <section className="w-full max-w-7xl mx-auto px-4 mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 shrink-0">
+        <section className="w-full max-w-7xl mx-auto px-3 sm:px-4 mt-4 sm:mt-6 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 shrink-0">
 
-          <div className="glass-panel p-5 rounded-2xl shadow-lg relative overflow-hidden flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-xl text-primary border border-primary/15">
-              <Database className="w-6 h-6" />
+          <div className="glass-panel p-3 sm:p-5 rounded-2xl shadow-lg relative overflow-hidden flex items-center gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 bg-primary/10 rounded-xl text-primary border border-primary/15 shrink-0">
+              <Database className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans">Tổng số lead cào</p>
-              <p className="text-2xl font-bold font-mono text-white mt-0.5">{leads.length}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans truncate">Tổng số lead cào</p>
+              <p className="text-lg sm:text-2xl font-bold font-mono text-white mt-0.5">{leads.length}</p>
             </div>
           </div>
 
-          <div className="glass-panel p-5 rounded-2xl shadow-lg relative overflow-hidden flex items-center gap-4">
-            <div className="p-3 bg-pink-500/10 rounded-xl text-pink-400 border border-pink-500/15">
-              <Users className="w-6 h-6" />
+          <div className="glass-panel p-3 sm:p-5 rounded-2xl shadow-lg relative overflow-hidden flex items-center gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 bg-pink-500/10 rounded-xl text-pink-400 border border-pink-500/15 shrink-0">
+              <Users className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans">Đang chọn gửi</p>
-              <p className="text-2xl font-bold font-mono text-white mt-0.5">{selectedIds.size}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans truncate">Đang chọn gửi</p>
+              <p className="text-lg sm:text-2xl font-bold font-mono text-white mt-0.5">{selectedIds.size}</p>
             </div>
           </div>
 
-          <div className="glass-panel p-5 rounded-2xl shadow-lg relative overflow-hidden flex items-center gap-4">
-            <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400 border border-emerald-500/15">
-              <CheckCircle2 className="w-6 h-6" />
+          <div className="glass-panel p-3 sm:p-5 rounded-2xl shadow-lg relative overflow-hidden flex items-center gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 bg-emerald-500/10 rounded-xl text-emerald-400 border border-emerald-500/15 shrink-0">
+              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans">Đã gửi thành công</p>
-              <p className="text-2xl font-bold font-mono text-white mt-0.5">
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans truncate">Đã gửi thành công</p>
+              <p className="text-lg sm:text-2xl font-bold font-mono text-white mt-0.5">
                 {leads.filter(l => l.emailStatus === 'Gửi thành công').length}
               </p>
             </div>
           </div>
 
-          <div className="glass-panel p-5 rounded-2xl shadow-lg relative overflow-hidden flex items-center gap-4">
-            <div className="p-3 bg-rose-500/10 rounded-xl text-rose-400 border border-rose-500/15">
-              <AlertCircle className="w-6 h-6" />
+          <div className="glass-panel p-3 sm:p-5 rounded-2xl shadow-lg relative overflow-hidden flex items-center gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 bg-rose-500/10 rounded-xl text-rose-400 border border-rose-500/15 shrink-0">
+              <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans">Gửi thất bại</p>
-              <p className="text-2xl font-mono font-bold text-white mt-0.5">
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans truncate">Gửi thất bại</p>
+              <p className="text-lg sm:text-2xl font-mono font-bold text-white mt-0.5">
                 {leads.filter(l => l.emailStatus.startsWith('Thất bại')).length}
               </p>
             </div>
@@ -239,7 +239,7 @@ export default function App() {
         </section>
 
         {/* Main Content Area */}
-        <main className="w-full max-w-7xl mx-auto px-4 py-6 flex-1 flex flex-col items-center">
+        <main className="w-full max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex-1 flex flex-col items-center">
           <Routes>
             <Route path="/" element={<Navigate to="/crawler" replace />} />
             <Route
@@ -289,12 +289,12 @@ export default function App() {
 
       {/* Notification Toast */}
       {toast.show && (
-        <div className={`fixed bottom-8 right-8 border rounded-2xl shadow-2xl p-4 flex items-center gap-3 z-50 animate-scale-in bg-slate-950/90 backdrop-blur-md ${toast.isError ? 'border-destructive text-rose-200' : 'border-primary text-pink-200'
+        <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-8 sm:bottom-8 sm:max-w-sm border rounded-2xl shadow-2xl p-4 flex items-center gap-3 z-50 animate-scale-in bg-slate-950/90 backdrop-blur-md ${toast.isError ? 'border-destructive text-rose-200' : 'border-primary text-pink-200'
           }`}>
           {toast.isError ? (
-            <AlertCircle className="w-5 h-5 text-destructive" />
+            <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
           ) : (
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
           )}
           <span className="text-sm font-semibold font-sans">{toast.message}</span>
         </div>
