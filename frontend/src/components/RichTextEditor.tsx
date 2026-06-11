@@ -13,16 +13,23 @@ export default function RichTextEditor({ value, onChange, placeholder, disabled 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCodeView, setIsCodeView] = useState(false);
 
+  const lastValueRef = useRef(value);
+
   // Sync value from prop to innerHTML on mount or when value changes externally
   useEffect(() => {
-    if (!isCodeView && editorRef.current && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value || '';
+    if (!isCodeView && editorRef.current) {
+      if (value !== lastValueRef.current) {
+        editorRef.current.innerHTML = value || '';
+        lastValueRef.current = value;
+      }
     }
   }, [value, isCodeView]);
 
   const handleInput = () => {
     if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+      const html = editorRef.current.innerHTML;
+      lastValueRef.current = html;
+      onChange(html);
     }
   };
 

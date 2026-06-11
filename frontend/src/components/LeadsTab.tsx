@@ -22,9 +22,18 @@ interface LeadsTabProps {
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 
 export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClearAll, showToast }: LeadsTabProps) {
+  const [searchTerm, setSearchTerm] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(25);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchTerm);
+      setCurrentPage(1);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Filter leads and sort by newest first
   const filteredLeads = useMemo(() =>
@@ -38,12 +47,6 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
     [leads, searchQuery]
   );
-
-  // Reset to page 1 when search changes
-  const handleSearch = (value: string) => {
-    setSearchQuery(value);
-    setCurrentPage(1);
-  };
 
   // Pagination calculations
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / pageSize));
@@ -136,8 +139,8 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
             type="text"
             className="w-full bg-slate-950/40 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300 placeholder-slate-500 font-sans"
             placeholder="Lọc theo Tên, Email, Số điện thoại..."
-            value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 

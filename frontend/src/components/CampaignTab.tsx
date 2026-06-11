@@ -220,33 +220,11 @@ export default function CampaignTab({ selectedLeads, onRemoveLead, smtpSettings,
           </div>
 
           {/* Selected leads list box */}
-          <div className="space-y-2">
-            <span className="text-xs font-semibold text-slate-400 flex justify-between">
-              <span>Danh sách Leads gửi hàng loạt:</span>
-              <span>Số lượng: <strong className="text-primary">{selectedLeads.length}</strong></span>
-            </span>
-            <div className="bg-slate-950/60 border border-white/5 rounded-xl p-3 max-h-[160px] overflow-y-auto space-y-2 text-xs scrollbar-thin">
-              {selectedLeads.length === 0 ? (
-                <div className="text-slate-500 py-4 text-center font-mono">Chưa chọn email nào. Hãy chọn leads từ tab "Danh sách Leads".</div>
-              ) : (
-                selectedLeads.map(lead => (
-                  <div key={lead.id} className="flex justify-between items-center bg-slate-900/40 border border-white/5 px-3 py-2 rounded-lg hover:border-white/10 transition-colors">
-                    <span className="truncate max-w-[85%] text-slate-300">
-                      <strong className="text-slate-200">{lead.name || 'Site'}</strong> - <code className="text-primary font-mono">{lead.email}</code>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => onRemoveLead(lead.id)}
-                      className="text-rose-400 hover:text-white p-1 hover:bg-rose-500/10 rounded-lg transition-all cursor-pointer"
-                      disabled={isSending}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+          <SelectedLeadsList
+            selectedLeads={selectedLeads}
+            onRemoveLead={onRemoveLead}
+            isSending={isSending}
+          />
 
           <button
             type="submit"
@@ -269,38 +247,107 @@ export default function CampaignTab({ selectedLeads, onRemoveLead, smtpSettings,
       </div>
 
       {/* Campaign Logs and Console Card */}
-      <div className="lg:col-span-5 glass-panel border border-white/5 rounded-2xl p-6 md:p-8 shadow-xl flex flex-col justify-between space-y-6">
-        <div className="space-y-4 flex-1 flex flex-col justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Layers className="w-5 h-5 text-primary" />
-              Kết Quả Gửi Thư
-            </h3>
-            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              Theo dõi kết quả gửi email theo thời gian thực từ SMTP Server.
-            </p>
-          </div>
+      <CampaignLogs
+        showProgress={showProgress}
+        progress={progress}
+        progressText={progressText}
+        logs={logs}
+      />
+    </div>
+  );
+}
 
-          {showProgress && (
-            <div className="space-y-2 bg-slate-950/40 border border-white/10 rounded-xl p-4">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-400 truncate max-w-[70%] font-medium">{progressText}</span>
-                <span className="text-primary font-bold font-mono">{progress}%</span>
-              </div>
-              <div className="w-full bg-slate-900/60 h-2.5 rounded-full overflow-hidden border border-white/5">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-pink-500 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+// Memoized Subcomponents to prevent re-renders when typing
+
+interface SelectedLeadsListProps {
+  selectedLeads: Lead[];
+  onRemoveLead: (id: string) => void;
+  isSending: boolean;
+}
+
+const SelectedLeadsList = React.memo(function SelectedLeadsList({
+  selectedLeads,
+  onRemoveLead,
+  isSending
+}: SelectedLeadsListProps) {
+  return (
+    <div className="space-y-2">
+      <span className="text-xs font-semibold text-slate-400 flex justify-between">
+        <span>Danh sách Leads gửi hàng loạt:</span>
+        <span>Số lượng: <strong className="text-primary">{selectedLeads.length}</strong></span>
+      </span>
+      <div className="bg-slate-950/60 border border-white/5 rounded-xl p-3 max-h-[160px] overflow-y-auto space-y-2 text-xs scrollbar-thin">
+        {selectedLeads.length === 0 ? (
+          <div className="text-slate-500 py-4 text-center font-mono">Chưa chọn email nào. Hãy chọn leads từ tab "Danh sách Leads".</div>
+        ) : (
+          selectedLeads.map(lead => (
+            <div key={lead.id} className="flex justify-between items-center bg-slate-900/40 border border-white/5 px-3 py-2 rounded-lg hover:border-white/10 transition-colors">
+              <span className="truncate max-w-[85%] text-slate-300">
+                <strong className="text-slate-200">{lead.name || 'Site'}</strong> - <code className="text-primary font-mono">{lead.email}</code>
+              </span>
+              <button
+                type="button"
+                onClick={() => onRemoveLead(lead.id)}
+                className="text-rose-400 hover:text-white p-1 hover:bg-rose-500/10 rounded-lg transition-all cursor-pointer"
+                disabled={isSending}
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-          )}
+          ))
+        )}
+      </div>
+    </div>
+  );
+});
 
-          <div className="bg-slate-950/80 border border-white/5 rounded-xl p-4 h-[280px] lg:h-[420px] overflow-y-auto font-mono text-xs text-sky-400 space-y-1.5 scrollbar-thin flex-1">
-            {logs.length === 0 ? (
-              <div className="text-slate-600 font-mono py-8 text-center">Chưa khởi tạo chiến dịch gửi email nào.</div>
-            ) : (
-              logs.map((log, idx) => {
+interface CampaignLogsProps {
+  showProgress: boolean;
+  progress: number;
+  progressText: string;
+  logs: string[];
+}
+
+const CampaignLogs = React.memo(function CampaignLogs({
+  showProgress,
+  progress,
+  progressText,
+  logs
+}: CampaignLogsProps) {
+  return (
+    <div className="lg:col-span-5 glass-panel border border-white/5 rounded-2xl p-6 md:p-8 shadow-xl flex flex-col justify-between space-y-6">
+      <div className="space-y-4 flex-1 flex flex-col justify-between">
+        <div>
+          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <Layers className="w-5 h-5 text-primary" />
+            Kết Quả Gửi Thư
+          </h3>
+          <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+            Theo dõi kết quả gửi email theo thời gian thực từ SMTP Server.
+          </p>
+        </div>
+
+        {showProgress && (
+          <div className="space-y-2 bg-slate-950/40 border border-white/10 rounded-xl p-4">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-slate-400 truncate max-w-[70%] font-medium">{progressText}</span>
+              <span className="text-primary font-bold font-mono">{progress}%</span>
+            </div>
+            <div className="w-full bg-slate-900/60 h-2.5 rounded-full overflow-hidden border border-white/5">
+              <div
+                className="h-full bg-gradient-to-r from-primary to-pink-500 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="bg-slate-950/80 border border-white/5 rounded-xl p-4 h-[280px] lg:h-[420px] overflow-y-auto font-mono text-xs text-sky-400 space-y-1.5 scrollbar-thin flex-1 font-sans">
+          {logs.length === 0 ? (
+            <div className="text-slate-600 font-mono py-8 text-center">Chưa khởi tạo chiến dịch gửi email nào.</div>
+          ) : (
+            <div className="font-mono space-y-1.5">
+              {logs.map((log, idx) => {
                 let logClass = 'text-sky-400';
                 let borderClass = 'border-sky-500/20';
                 if (log.includes('[Thành công]')) {
@@ -319,11 +366,11 @@ export default function CampaignTab({ selectedLeads, onRemoveLead, smtpSettings,
                     {log}
                   </div>
                 );
-              })
-            )}
-          </div>
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
-}
+});

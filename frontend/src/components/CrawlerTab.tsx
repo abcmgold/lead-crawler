@@ -188,102 +188,19 @@ export default function CrawlerTab({ onCrawlSuccess, showToast }: CrawlerTabProp
       </div>
 
       {/* Progress Card */}
-      {showProgressCard && (
-        <div className="glass-panel rounded-2xl p-6 shadow-xl space-y-4 animate-scale-in">
-          <div className="flex justify-between items-center">
-            <h4 className="font-bold text-white flex items-center gap-2">
-              <Loader2 className={`w-4 h-4 text-primary ${crawlStatus === 'Đang quét...' ? 'animate-spin' : ''}`} />
-              Tiến Trình Cào Dữ Liệu
-            </h4>
-            <span className={`text-xs px-3 py-1 rounded-full font-semibold border ${crawlStatus === 'Hoàn thành' ? 'bg-emerald-950/30 text-emerald-400 border-emerald-500/20' :
-                crawlStatus === 'Lỗi' ? 'bg-rose-950/30 text-rose-400 border-rose-500/20' :
-                  'bg-primary/20 text-primary border-primary/20 animate-pulse'
-              }`}>
-              {crawlStatus}
-            </span>
-          </div>
-
-          <div className="w-full bg-slate-950/60 h-2.5 rounded-full overflow-hidden border border-white/5">
-            <div
-              className="h-full bg-gradient-to-r from-primary via-pink-500 to-purple-500 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-
-          {/* Console Output */}
-          <div className="bg-slate-950/80 border border-white/5 rounded-xl p-4 h-48 sm:h-64 overflow-y-auto font-mono text-xs text-sky-400 space-y-1.5 scrollbar-thin">
-            {consoleLogs.map((log, idx) => (
-              <div key={idx} className={`leading-relaxed border-l-2 pl-2 ${log.type === 'success' ? 'text-emerald-400 border-emerald-500/40' :
-                  log.type === 'error' ? 'text-rose-400 border-rose-500/40' :
-                    log.type === 'warning' ? 'text-amber-400 border-amber-500/40' :
-                      'text-sky-400 border-sky-500/20'
-                }`}>
-                <span className="text-slate-500 mr-2">[{log.timestamp}]</span>
-                {log.message}
-              </div>
-            ))}
-            <div ref={consoleEndRef} />
-          </div>
-        </div>
-      )}
+      <ProgressCard
+        showProgressCard={showProgressCard}
+        crawlStatus={crawlStatus}
+        progress={progress}
+        consoleLogs={consoleLogs}
+        consoleEndRef={consoleEndRef}
+      />
 
       {/* History Card */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <Clock className="w-5 h-5 text-primary" />
-            Lịch sử quét
-          </h3>
-          {history.length > 0 && (
-            <button
-              onClick={() => setShowClearHistoryConfirm(true)}
-              className="text-xs text-rose-400 border border-rose-500/20 hover:bg-rose-500/10 px-3.5 py-2 rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer font-medium self-start sm:self-auto"
-            >
-              <Trash2 className="w-4 h-4" />
-              Xóa lịch sử
-            </button>
-          )}
-        </div>
-
-        <div className="overflow-x-auto rounded-xl border border-white/5">
-          <table className="w-full text-sm text-left text-slate-300">
-            <thead className="text-xs uppercase bg-slate-900/40 text-slate-400 border-b border-white/5">
-              <tr>
-                <th className="px-5 py-4">Thời gian</th>
-                <th className="px-5 py-4">Từ khóa / URL</th>
-                <th className="px-5 py-4">Số URL quét</th>
-                <th className="px-5 py-4">Số Leads mới</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="text-center py-10 text-slate-500 font-mono">
-                    Chưa có lịch sử quét nào.
-                  </td>
-                </tr>
-              ) : (
-                [...history].reverse().map((log) => (
-                  <tr key={log.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer">
-                    <td className="px-5 py-4 text-slate-400 font-mono">
-                      {new Date(log.timestamp).toLocaleString('vi-VN')}
-                    </td>
-                    <td className="px-5 py-4 font-semibold text-slate-200">
-                      {log.keyword}
-                    </td>
-                    <td className="px-5 py-4 text-slate-400 font-mono">
-                      {log.urlsCount} URLs
-                    </td>
-                    <td className="px-5 py-4 text-emerald-400 font-semibold font-mono">
-                      +{log.newLeadsCount} Leads
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <HistoryCard
+        history={history}
+        onClearHistoryClick={() => setShowClearHistoryConfirm(true)}
+      />
 
       {/* Clear history confirmation */}
       <ConfirmDialog
@@ -298,3 +215,130 @@ export default function CrawlerTab({ onCrawlSuccess, showToast }: CrawlerTabProp
     </div>
   );
 }
+
+// Memoized Subcomponents to prevent re-renders when typing
+
+interface ProgressCardProps {
+  showProgressCard: boolean;
+  crawlStatus: string;
+  progress: number;
+  consoleLogs: ConsoleLog[];
+  consoleEndRef: React.RefObject<HTMLDivElement | null>;
+}
+
+const ProgressCard = React.memo(function ProgressCard({
+  showProgressCard,
+  crawlStatus,
+  progress,
+  consoleLogs,
+  consoleEndRef
+}: ProgressCardProps) {
+  if (!showProgressCard) return null;
+  return (
+    <div className="glass-panel rounded-2xl p-6 shadow-xl space-y-4 animate-scale-in">
+      <div className="flex justify-between items-center">
+        <h4 className="font-bold text-white flex items-center gap-2">
+          <Loader2 className={`w-4 h-4 text-primary ${crawlStatus === 'Đang quét...' ? 'animate-spin' : ''}`} />
+          Tiến Trình Cào Dữ Liệu
+        </h4>
+        <span className={`text-xs px-3 py-1 rounded-full font-semibold border ${crawlStatus === 'Hoàn thành' ? 'bg-emerald-950/30 text-emerald-400 border-emerald-500/20' :
+            crawlStatus === 'Lỗi' ? 'bg-rose-950/30 text-rose-400 border-rose-500/20' :
+              'bg-primary/20 text-primary border-primary/20 animate-pulse'
+          }`}>
+          {crawlStatus}
+        </span>
+      </div>
+
+      <div className="w-full bg-slate-950/60 h-2.5 rounded-full overflow-hidden border border-white/5">
+        <div
+          className="h-full bg-gradient-to-r from-primary via-pink-500 to-purple-500 rounded-full transition-all duration-300"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      {/* Console Output */}
+      <div className="bg-slate-950/80 border border-white/5 rounded-xl p-4 h-48 sm:h-64 overflow-y-auto font-mono text-xs text-sky-400 space-y-1.5 scrollbar-thin">
+        {consoleLogs.map((log, idx) => (
+          <div key={idx} className={`leading-relaxed border-l-2 pl-2 ${log.type === 'success' ? 'text-emerald-400 border-emerald-500/40' :
+              log.type === 'error' ? 'text-rose-400 border-rose-500/40' :
+                log.type === 'warning' ? 'text-amber-400 border-amber-500/40' :
+                  'text-sky-400 border-sky-500/20'
+            }`}>
+            <span className="text-slate-500 mr-2">[{log.timestamp}]</span>
+            {log.message}
+          </div>
+        ))}
+        <div ref={consoleEndRef} />
+      </div>
+    </div>
+  );
+});
+
+interface HistoryCardProps {
+  history: HistoryItem[];
+  onClearHistoryClick: () => void;
+}
+
+const HistoryCard = React.memo(function HistoryCard({
+  history,
+  onClearHistoryClick
+}: HistoryCardProps) {
+  return (
+    <div className="glass-panel rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <Clock className="w-5 h-5 text-primary" />
+          Lịch sử quét
+        </h3>
+        {history.length > 0 && (
+          <button
+            onClick={onClearHistoryClick}
+            className="text-xs text-rose-400 border border-rose-500/20 hover:bg-rose-500/10 px-3.5 py-2 rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer font-medium self-start sm:self-auto"
+          >
+            <Trash2 className="w-4 h-4" />
+            Xóa lịch sử
+          </button>
+        )}
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-white/5">
+        <table className="w-full text-sm text-left text-slate-300">
+          <thead className="text-xs uppercase bg-slate-900/40 text-slate-400 border-b border-white/5">
+            <tr>
+              <th className="px-5 py-4">Thời gian</th>
+              <th className="px-5 py-4">Từ khóa / URL</th>
+              <th className="px-5 py-4">Số URL quét</th>
+              <th className="px-5 py-4">Số Leads mới</th>
+            </tr>
+          </thead>
+          <tbody>
+            {history.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="text-center py-10 text-slate-500 font-mono">
+                  Chưa có lịch sử quét nào.
+                </td>
+              </tr>
+            ) : (
+              [...history].reverse().map((log) => (
+                <tr key={log.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                  <td className="px-5 py-4 text-slate-400 font-mono">
+                    {new Date(log.timestamp).toLocaleString('vi-VN')}
+                  </td>
+                  <td className="px-5 py-4 font-semibold text-slate-200">
+                    {log.keyword}
+                  </td>
+                  <td className="px-5 py-4 text-slate-400 font-mono">
+                    {log.urlsCount} URLs
+                  </td>
+                  <td className="px-5 py-4 text-emerald-400 font-semibold font-mono">
+                    +{log.newLeadsCount} Leads
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+});
