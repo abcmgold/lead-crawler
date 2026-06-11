@@ -239,7 +239,7 @@ export default function App() {
         </section>
 
         {/* Main Content Area */}
-        <main className="w-full max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex-1 flex flex-col items-center">
+        <main className="w-full max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex-1 flex flex-col">
           <Routes>
             <Route path="/" element={<Navigate to="/crawler" replace />} />
             <Route

@@ -15,7 +15,7 @@ const inputClass =
 
 export default function SettingsTab({ smtpSettings, onSettingsUpdated, showToast }: SettingsTabProps) {
   return (
-    <div className="glass-panel border border-white/5 rounded-2xl p-6 md:p-8 shadow-xl animate-scale-in max-w-4xl relative overflow-hidden">
+    <div className="glass-panel border border-white/5 rounded-2xl p-6 md:p-8 shadow-xl animate-scale-in w-full relative overflow-hidden">
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] rounded-full pointer-events-none" />
       <Tabs defaultValue="smtp" className="relative z-10">
         <TabsList>
@@ -278,7 +278,7 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
         </p>
       </div>
 
-      <div className="space-y-5 max-w-md">
+      <div className="space-y-5 max-w-2xl">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-400">Mật khẩu hiện tại</label>
           <input
@@ -289,25 +289,28 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
             disabled={isSaving}
           />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-400">Mật khẩu mới</label>
-          <input
-            type="password"
-            className={inputClass}
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            disabled={isSaving}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-400">Xác nhận mật khẩu mới</label>
-          <input
-            type="password"
-            className={inputClass}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            disabled={isSaving}
-          />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-400">Mật khẩu mới</label>
+            <input
+              type="password"
+              className={inputClass}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              disabled={isSaving}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-400">Xác nhận mật khẩu mới</label>
+            <input
+              type="password"
+              className={inputClass}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={isSaving}
+            />
+          </div>
         </div>
 
         <button

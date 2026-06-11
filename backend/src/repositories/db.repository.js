@@ -122,6 +122,42 @@ async function saveSmtpSettings(settings) {
   );
 }
 
+function rowToTemplate(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    subject: row.subject,
+    body: row.body,
+    createdAt: row.created_at.toISOString()
+  };
+}
+
+async function getTemplates() {
+  const { rows } = await pool.query('SELECT * FROM email_templates ORDER BY created_at DESC');
+  return rows.map(rowToTemplate);
+}
+
+async function insertTemplate(template) {
+  await pool.query(
+    `INSERT INTO email_templates (id, name, subject, body, created_at)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [template.id, template.name, template.subject, template.body, template.createdAt || new Date().toISOString()]
+  );
+}
+
+async function updateTemplate(id, template) {
+  await pool.query(
+    `UPDATE email_templates
+     SET name = $1, subject = $2, body = $3
+     WHERE id = $4`,
+    [template.name, template.subject, template.body, id]
+  );
+}
+
+async function deleteTemplate(id) {
+  await pool.query('DELETE FROM email_templates WHERE id = $1', [id]);
+}
+
 module.exports = {
   getLeads,
   findLeadByEmail,
@@ -135,5 +171,9 @@ module.exports = {
   findUserByUsername,
   updateUserPassword,
   getSmtpSettings,
-  saveSmtpSettings
+  saveSmtpSettings,
+  getTemplates,
+  insertTemplate,
+  updateTemplate,
+  deleteTemplate
 };

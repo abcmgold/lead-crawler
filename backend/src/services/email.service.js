@@ -29,6 +29,33 @@ function buildAttachments(attachments) {
   return result;
 }
 
+// Helper to extract base64 inline images and map them to CID attachments
+function processInlineImages(htmlBody) {
+  const inlineAttachments = [];
+  let processedHtml = htmlBody || '';
+  
+  // Find all src="data:image/..." or src='data:image/...'
+  const regex = /src=["']data:(image\/[a-zA-Z0-9+.-]+);base64,([^"']+)["']/g;
+  let index = 0;
+  
+  processedHtml = processedHtml.replace(regex, (match, contentType, base64Data) => {
+    const cid = `inline_img_${Date.now()}_${index++}`;
+    const ext = contentType.split('/')[1] || 'png';
+    inlineAttachments.push({
+      filename: `image_${index}.${ext}`,
+      content: Buffer.from(base64Data, 'base64'),
+      cid: cid,
+      contentType: contentType
+    });
+    return `src="cid:${cid}"`;
+  });
+  
+  return {
+    processedHtml,
+    inlineAttachments
+  };
+}
+
 // Sends a personalized email to each lead/custom address sequentially, persisting emailStatus
 async function sendBulkEmails({ leadIds, customEmails, subject, body, attachments, smtp }) {
   const transporter = buildTransporter(smtp);
@@ -55,8 +82,11 @@ async function sendBulkEmails({ leadIds, customEmails, subject, body, attachment
   }
 
   const attachmentsToSend = buildAttachments(attachments);
+  
+  // Process inline base64 images
+  const { processedHtml, inlineAttachments } = processInlineImages(body);
 
-  logSystem(`Bắt đầu chiến dịch gửi email. Tổng số lượng nhận: ${leadsToSend.length}. Tiêu đề: "${subject}". Người gửi: <${smtp.senderEmail || smtp.user}>. Số tệp đính kèm: ${attachmentsToSend.length}`, 'INFO');
+  logSystem(`Bắt đầu chiến dịch gửi email. Tổng số lượng nhận: ${leadsToSend.length}. Tiêu đề: "${subject}". Người gửi: <${smtp.senderEmail || smtp.user}>. Số tệp đính kèm: ${attachmentsToSend.length}. Số ảnh chèn inline: ${inlineAttachments.length}`, 'INFO');
 
   let successCount = 0;
   let failCount = 0;
@@ -64,7 +94,7 @@ async function sendBulkEmails({ leadIds, customEmails, subject, body, attachment
   // Send sequentially to avoid spam detection
   for (const lead of leadsToSend) {
     // Replace placeholder variables
-    const personalizedBody = body
+    const personalizedBody = processedHtml
       .replace(/{{Name}}/g, lead.name)
       .replace(/{{Email}}/g, lead.email)
       .replace(/{{Phone}}/g, lead.phone)
@@ -80,7 +110,7 @@ async function sendBulkEmails({ leadIds, customEmails, subject, body, attachment
         subject: subject,
         text: isHtml ? personalizedBody.replace(/<[^>]*>/g, '') : personalizedBody,
         html: isHtml ? personalizedBody : personalizedBody.replace(/\n/g, '<br>'),
-        attachments: attachmentsToSend
+        attachments: [...attachmentsToSend, ...inlineAttachments]
       });
 
 

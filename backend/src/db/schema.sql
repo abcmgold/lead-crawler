@@ -35,3 +35,11 @@ CREATE TABLE IF NOT EXISTS smtp_settings (
   sender_email TEXT NOT NULL DEFAULT '',
   CONSTRAINT smtp_settings_singleton CHECK (id = 1)
 );
+
+CREATE TABLE IF NOT EXISTS email_templates (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  body TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

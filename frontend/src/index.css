@@ -174,3 +174,36 @@
   background: linear-gradient(90deg, oklch(0.7043 0.2019 332.0212), #ec4899);
   transition: all 0.30s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* Rich Text Editor Content Area Styles (Overrides Tailwind resets) */
+.rich-text-editor-content ul {
+  list-style-type: disc !important;
+  margin-left: 1.5rem !important;
+  padding-left: 0.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.rich-text-editor-content ol {
+  list-style-type: decimal !important;
+  margin-left: 1.5rem !important;
+  padding-left: 0.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.rich-text-editor-content li {
+  margin-bottom: 0.25rem !important;
+  display: list-item !important;
+}
+
+.rich-text-editor-content a {
+  color: var(--primary) !important;
+  text-decoration: underline !important;
+}
+
+.rich-text-editor-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}

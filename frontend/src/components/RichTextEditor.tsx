@@ -263,19 +263,19 @@ export default function RichTextEditor({ value, onChange, placeholder, disabled 
           placeholder="Nhập mã HTML..."
         />
       ) : (
-        <div
-          ref={editorRef}
-          contentEditable
-          onInput={handleInput}
-          className="w-full min-h-[260px] max-h-[500px] overflow-y-auto p-4 text-sm text-white focus:outline-none bg-slate-950/20 font-sans prose prose-invert max-w-none"
-          style={{ wordBreak: 'break-word' }}
-        />
-      )}
-      
-      {/* Placeholder display */}
-      {!value && !isCodeView && (
-        <div className="absolute top-[52px] left-4 text-slate-600 text-sm pointer-events-none font-sans select-none">
-          {placeholder || "Soạn nội dung email ở đây..."}
+        <div className="relative w-full min-h-[260px] max-h-[500px]">
+          <div
+            ref={editorRef}
+            contentEditable
+            onInput={handleInput}
+            className="w-full min-h-[260px] max-h-[500px] overflow-y-auto p-4 text-sm text-white focus:outline-none bg-slate-950/20 font-sans prose prose-invert max-w-none rich-text-editor-content"
+            style={{ wordBreak: 'break-word' }}
+          />
+          {!value && (
+            <div className="absolute top-4 left-4 text-slate-600 text-sm pointer-events-none font-sans select-none whitespace-pre-wrap max-w-[calc(100%-2rem)]">
+              {placeholder || "Soạn nội dung email ở đây..."}
+            </div>
+          )}
         </div>
       )}
     </div>
