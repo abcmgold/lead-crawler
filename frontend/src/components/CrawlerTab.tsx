@@ -13,14 +13,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { DataTable, Column } from '@/components/ui/data-table';
 
 interface CrawlerTabProps {
   onCrawlSuccess: () => void;
@@ -89,6 +82,51 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
     }
     return pages;
   };
+
+  const modalColumns = React.useMemo<Column<Lead>[]>(() => [
+    {
+      id: 'name',
+      header: "Doanh Nghiệp / Site",
+      accessor: (lead) => lead.name,
+      className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
+      cellClassName: "px-4 py-3 font-semibold text-slate-200 truncate max-w-[200px] font-sans",
+    },
+    {
+      id: 'email',
+      header: "Email",
+      accessor: (lead) => (
+        <code className="text-primary font-mono text-xs bg-primary/5 px-2 py-0.5 rounded border border-primary/10 select-all">
+          {lead.email}
+        </code>
+      ),
+      className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
+      cellClassName: "px-4 py-3",
+    },
+    {
+      id: 'phone',
+      header: "Số điện thoại",
+      accessor: (lead) => lead.phone || '—',
+      className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
+      cellClassName: "px-4 py-3 text-slate-400 font-mono text-xs",
+    },
+    {
+      id: 'website',
+      header: "Website",
+      accessor: (lead) => (
+        <a
+          href={lead.website}
+          target="_blank"
+          rel="noreferrer"
+          className="text-slate-400 hover:text-primary hover:underline inline-flex items-center gap-1 transition-colors text-xs font-sans"
+        >
+          {lead.website}
+          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+        </a>
+      ),
+      className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
+      cellClassName: "px-4 py-3 max-w-[200px] truncate",
+    }
+  ], []);
 
   const consoleEndRef = useRef<HTMLDivElement>(null);
 
@@ -309,46 +347,13 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
                   Không tìm thấy lead nào thuộc phiên cào này hoặc đã bị xóa.
                 </div>
               ) : (
-                <div className="rounded-xl border border-white/5 bg-slate-950/20 overflow-hidden">
-                  <Table>
-                    <TableHeader className="bg-slate-900/60 border-b border-white/5 [&_tr]:border-b-0">
-                      <TableRow className="hover:bg-transparent border-0">
-                        <TableHead className="px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400">Doanh Nghiệp / Site</TableHead>
-                        <TableHead className="px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400">Email</TableHead>
-                        <TableHead className="px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400">Số điện thoại</TableHead>
-                        <TableHead className="px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400">Website</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {pagedModalLeads.map((lead) => (
-                        <TableRow key={lead.id} className="border-b border-white/5 hover:bg-white/[0.02]">
-                          <TableCell className="px-4 py-3 font-semibold text-slate-200 truncate max-w-[200px] font-sans">
-                            {lead.name}
-                          </TableCell>
-                          <TableCell className="px-4 py-3">
-                            <code className="text-primary font-mono text-xs bg-primary/5 px-2 py-0.5 rounded border border-primary/10 select-all">
-                              {lead.email}
-                            </code>
-                          </TableCell>
-                          <TableCell className="px-4 py-3 text-slate-400 font-mono text-xs">
-                            {lead.phone || '—'}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 max-w-[200px] truncate">
-                            <a
-                              href={lead.website}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-slate-400 hover:text-primary hover:underline inline-flex items-center gap-1 transition-colors text-xs font-sans"
-                            >
-                              {lead.website}
-                              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                            </a>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                <DataTable
+                  columns={modalColumns}
+                  data={pagedModalLeads}
+                  keyExtractor={(lead) => lead.id}
+                  emptyState="Không tìm thấy lead nào thuộc phiên cào này hoặc đã bị xóa."
+                  className="w-full text-sm text-left text-slate-300"
+                />
               )}
             </div>
 
@@ -538,48 +543,45 @@ const HistoryCard = React.memo(function HistoryCard({
         )}
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-white/5">
-        <table className="w-full text-sm text-left text-slate-300">
-          <thead className="text-xs uppercase bg-slate-900/40 text-slate-400 border-b border-white/5">
-            <tr>
-              <th className="px-5 py-4">Thời gian</th>
-              <th className="px-5 py-4">Từ khóa / URL</th>
-              <th className="px-5 py-4">Số URL quét</th>
-              <th className="px-5 py-4">Số Leads mới</th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="text-center py-10 text-slate-500 font-mono">
-                  Chưa có lịch sử quét nào.
-                </td>
-              </tr>
-            ) : (
-              [...history].reverse().map((log) => (
-                <tr
-                  key={log.id}
-                  className="border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
-                  onClick={() => onRowClick(log)}
-                >
-                  <td className="px-5 py-4 text-slate-400 font-mono">
-                    {new Date(log.timestamp).toLocaleString('vi-VN')}
-                  </td>
-                  <td className="px-5 py-4 font-semibold text-slate-200">
-                    {log.keyword}
-                  </td>
-                  <td className="px-5 py-4 text-slate-400 font-mono">
-                    {log.urlsCount} URLs
-                  </td>
-                  <td className="px-5 py-4 text-emerald-400 font-semibold font-mono">
-                    +{log.newLeadsCount} Leads
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={React.useMemo<Column<HistoryItem>[]>(() => [
+          {
+            id: 'timestamp',
+            header: "Thời gian",
+            accessor: (log) => new Date(log.timestamp).toLocaleString('vi-VN'),
+            className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
+            cellClassName: "px-5 py-4 text-slate-400 font-mono",
+          },
+          {
+            id: 'keyword',
+            header: "Từ khóa / URL",
+            accessor: (log) => log.keyword,
+            className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
+            cellClassName: "px-5 py-4 font-semibold text-slate-200",
+          },
+          {
+            id: 'urlsCount',
+            header: "Số URL quét",
+            accessor: (log) => `${log.urlsCount} URLs`,
+            className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
+            cellClassName: "px-5 py-4 text-slate-400 font-mono",
+          },
+          {
+            id: 'newLeadsCount',
+            header: "Số Leads mới",
+            accessor: (log) => `+${log.newLeadsCount} Leads`,
+            className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
+            cellClassName: "px-5 py-4 text-emerald-400 font-semibold font-mono",
+          }
+        ], [])}
+        data={[...history].reverse()}
+        keyExtractor={(log) => log.id}
+        onRowClick={(log) => onRowClick(log)}
+        rowClassName="border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
+        emptyState="Chưa có lịch sử quét nào."
+        containerClassName="rounded-xl border border-white/5 overflow-hidden"
+        className="w-full text-sm text-left text-slate-300"
+      />
     </div>
   );
 });

@@ -11,6 +11,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import { DataTable, Column } from '@/components/ui/data-table';
 
 interface LeadsTabProps {
   leads: Lead[];
@@ -84,6 +85,8 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [leads, searchQuery, selectedLogId, crawlLogs]);
 
+  const isAllFilteredSelected = filteredLeads.length > 0 && filteredLeads.every(l => selectedIds.has(l.id));
+
   // Pagination calculations
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
@@ -127,6 +130,94 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
     onSelectionChange(nextSelected);
   };
 
+  const columns = useMemo<Column<Lead>[]>(() => [
+    {
+      id: 'select',
+      header: (
+        <div className="flex justify-center items-center">
+          <input
+            type="checkbox"
+            className="w-4 h-4 accent-primary cursor-pointer rounded bg-slate-950/60 border border-white/10 checked:bg-primary checked:border-primary focus:ring-0 focus:outline-none"
+            checked={isAllFilteredSelected}
+            onChange={(e) => handleSelectAll(e)}
+          />
+        </div>
+      ),
+      accessor: (lead) => {
+        const isSelected = selectedIds.has(lead.id);
+        return (
+          <div className="flex justify-center items-center" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              className="w-4 h-4 accent-primary cursor-pointer rounded bg-slate-950/60 border border-white/10 focus:ring-0 focus:outline-none"
+              checked={isSelected}
+              onChange={(e) => handleSelectOne(lead.id, e.target.checked)}
+            />
+          </div>
+        );
+      },
+      className: "p-4 w-14 text-center",
+      cellClassName: "p-4 text-center",
+    },
+    {
+      id: 'name',
+      header: "Doanh Nghiệp / Site",
+      accessor: (lead) => lead.name,
+      className: "px-6 py-4 font-semibold font-sans",
+      cellClassName: "px-6 py-4 font-semibold text-slate-200 max-w-[200px] truncate font-sans",
+    },
+    {
+      id: 'email',
+      header: "Email",
+      accessor: (lead) => (
+        <code className="text-primary font-mono text-xs select-all bg-primary/5 px-2 py-1 rounded border border-primary/10">
+          {lead.email}
+        </code>
+      ),
+      className: "px-6 py-4 font-semibold font-sans",
+      cellClassName: "px-6 py-4",
+    },
+    {
+      id: 'phone',
+      header: "Số điện thoại",
+      accessor: (lead) => lead.phone || '—',
+      className: "px-6 py-4 font-semibold font-sans",
+      cellClassName: "px-6 py-4 text-slate-400 font-mono text-xs",
+    },
+    {
+      id: 'website',
+      header: "Website",
+      accessor: (lead) => (
+        <a
+          href={lead.website}
+          target="_blank"
+          rel="noreferrer"
+          className="text-slate-400 hover:text-primary inline-flex items-center gap-1.5 hover:underline transition-colors duration-150 font-sans"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {lead.website}
+          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+        </a>
+      ),
+      className: "px-6 py-4 font-semibold font-sans",
+      cellClassName: "px-6 py-4 max-w-[220px] truncate",
+    },
+    {
+      id: 'emailStatus',
+      header: "Trạng thái Email",
+      accessor: (lead) => (
+        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold border font-sans ${lead.emailStatus === 'Gửi thành công' ? 'bg-emerald-950/30 text-emerald-400 border-emerald-500/20' :
+          lead.emailStatus.startsWith('Thất bại') ? 'bg-rose-950/30 text-rose-400 border-rose-500/20' :
+            'bg-slate-900/50 text-slate-400 border-white/5'
+          }`}>
+          {lead.emailStatus}
+        </span>
+      ),
+      className: "px-6 py-4 font-semibold text-right font-sans",
+      cellClassName: "px-6 py-4 text-right",
+    }
+  ], [isAllFilteredSelected, selectedIds, handleSelectAll, handleSelectOne]);
+
   const handleExportCSV = () => {
     if (leads.length === 0) {
       showToast('Không có dữ liệu để xuất!', true);
@@ -160,7 +251,7 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
     showToast('Đã tải xuống file CSV thành công!');
   };
 
-  const isAllFilteredSelected = filteredLeads.length > 0 && filteredLeads.every(l => selectedIds.has(l.id));
+
 
   return (
     <div className="space-y-6 animate-scale-in">
@@ -229,91 +320,19 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
 
       {/* Main Table */}
       <div className="glass-panel rounded-2xl shadow-xl overflow-hidden border border-white/5">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left text-slate-300 border-collapse">
-            <thead className="text-xs uppercase bg-slate-900/40 text-slate-400 sticky top-0 z-10 border-b border-white/5 backdrop-blur-md">
-              <tr>
-                <th className="p-4 w-14 text-center">
-                  <div className="flex justify-center items-center">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 accent-primary cursor-pointer rounded bg-slate-950/60 border border-white/10 checked:bg-primary checked:border-primary focus:ring-0 focus:outline-none"
-                      checked={isAllFilteredSelected}
-                      onChange={handleSelectAll}
-                    />
-                  </div>
-                </th>
-                <th className="px-6 py-4 font-semibold font-sans">Doanh Nghiệp / Site</th>
-                <th className="px-6 py-4 font-semibold font-sans">Email</th>
-                <th className="px-6 py-4 font-semibold font-sans">Số điện thoại</th>
-                <th className="px-6 py-4 font-semibold font-sans">Website</th>
-                <th className="px-6 py-4 font-semibold text-right font-sans">Trạng thái Email</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedLeads.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-16 text-slate-500 font-mono">
-                    {leads.length === 0 ? 'Chưa có leads nào. Hãy quét từ khóa ở tab cào.' : 'Không tìm thấy kết quả phù hợp.'}
-                  </td>
-                </tr>
-              ) : (
-                pagedLeads.map((lead) => {
-                  const isSelected = selectedIds.has(lead.id);
-                  return (
-                    <tr
-                      key={lead.id}
-                      className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer ${isSelected ? 'bg-primary/[0.03]' : ''
-                        }`}
-                      onClick={() => handleSelectOne(lead.id, !isSelected)}
-                    >
-                      <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-center items-center">
-                          <input
-                            type="checkbox"
-                            className="w-4 h-4 accent-primary cursor-pointer rounded bg-slate-950/60 border border-white/10 focus:ring-0 focus:outline-none"
-                            checked={isSelected}
-                            onChange={(e) => handleSelectOne(lead.id, e.target.checked)}
-                          />
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 font-semibold text-slate-200 max-w-[200px] truncate font-sans">
-                        {lead.name}
-                      </td>
-                      <td className="px-6 py-4">
-                        <code className="text-primary font-mono text-xs select-all bg-primary/5 px-2 py-1 rounded border border-primary/10">
-                          {lead.email}
-                        </code>
-                      </td>
-                      <td className="px-6 py-4 text-slate-400 font-mono text-xs">
-                        {lead.phone || '—'}
-                      </td>
-                      <td className="px-6 py-4 max-w-[220px] truncate" onClick={(e) => e.stopPropagation()}>
-                        <a
-                          href={lead.website}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-slate-400 hover:text-primary inline-flex items-center gap-1.5 hover:underline transition-colors duration-150 font-sans"
-                        >
-                          {lead.website}
-                          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                        </a>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold border font-sans ${lead.emailStatus === 'Gửi thành công' ? 'bg-emerald-950/30 text-emerald-400 border-emerald-500/20' :
-                          lead.emailStatus.startsWith('Thất bại') ? 'bg-rose-950/30 text-rose-400 border-rose-500/20' :
-                            'bg-slate-900/50 text-slate-400 border-white/5'
-                          }`}>
-                          {lead.emailStatus}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={columns}
+          data={pagedLeads}
+          keyExtractor={(lead) => lead.id}
+          onRowClick={(lead) => handleSelectOne(lead.id, !selectedIds.has(lead.id))}
+          rowClassName={(lead) => {
+            const isSelected = selectedIds.has(lead.id);
+            return `border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer ${isSelected ? 'bg-primary/[0.03]' : ''}`;
+          }}
+          emptyState={leads.length === 0 ? 'Chưa có leads nào. Hãy quét từ khóa ở tab cào.' : 'Không tìm thấy kết quả phù hợp.'}
+          containerClassName="relative w-full overflow-x-auto"
+          className="w-full text-sm text-left text-slate-300 border-collapse"
+        />
 
         {/* Pagination Footer */}
         <div className="bg-slate-900/30 border-t border-white/5 px-4 py-4 flex flex-col lg:flex-row items-center justify-between gap-4">
