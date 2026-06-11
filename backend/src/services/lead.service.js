@@ -1,36 +1,37 @@
-const jsonRepo = require('../repositories/json.repository');
+const dbRepo = require('../repositories/db.repository');
 
 const VALID_PHONE_REGEX = /^0\d{9}$/;
 
 // Normalize phone numbers stored on existing leads (max 2 valid numbers each)
-function cleanPhones() {
-  const leads = jsonRepo.getLeads();
+async function cleanPhones() {
+  const leads = await dbRepo.getLeads();
   let fixedCount = 0;
 
-  const cleanedLeads = leads.map(lead => {
+  for (const lead of leads) {
     const phones = (lead.phone || '')
       .split(',')
       .map(p => p.trim().replace(/[\s.-]/g, ''))
       .filter(p => VALID_PHONE_REGEX.test(p));
 
     const cleanPhone = [...new Set(phones)].slice(0, 2).join(', ');
-    if (cleanPhone !== lead.phone) fixedCount++;
-    return { ...lead, phone: cleanPhone };
-  });
+    if (cleanPhone !== lead.phone) {
+      await dbRepo.updateLeadPhone(lead.id, cleanPhone);
+      fixedCount++;
+    }
+  }
 
-  jsonRepo.saveLeads(cleanedLeads);
-  return { fixedCount, total: cleanedLeads.length };
+  return { fixedCount, total: leads.length };
 }
 
-// Append new leads (deduped by email) found from a crawl result. Returns how many were added.
-function addLeadsFromCrawl(leads, crawled, keyword) {
+// Persist new leads (deduped by email) found from a crawl result. Returns how many were added.
+async function addLeadsFromCrawl(crawled, keyword) {
   let newLeadsCount = 0;
 
-  crawled.emails.forEach(email => {
-    const exists = leads.some(l => l.email === email);
-    if (!exists) {
+  for (const email of crawled.emails) {
+    const existing = await dbRepo.findLeadByEmail(email);
+    if (!existing) {
       const uniquePhones = [...new Set(crawled.phones)].slice(0, 2);
-      leads.push({
+      await dbRepo.insertLead({
         id: '_' + Math.random().toString(36).substr(2, 9),
         name: crawled.title,
         email,
@@ -42,7 +43,7 @@ function addLeadsFromCrawl(leads, crawled, keyword) {
       });
       newLeadsCount++;
     }
-  });
+  }
 
   return newLeadsCount;
 }

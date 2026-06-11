@@ -1,18 +1,18 @@
-const jsonRepo = require('../repositories/json.repository');
+const dbRepo = require('../repositories/db.repository');
 const leadService = require('../services/lead.service');
 const { logSystem } = require('../utils/logger');
 
-function getLeads(req, res) {
-  res.json(jsonRepo.getLeads());
+async function getLeads(req, res) {
+  res.json(await dbRepo.getLeads());
 }
 
-function clearLeads(req, res) {
-  jsonRepo.saveLeads([]);
+async function clearLeads(req, res) {
+  await dbRepo.clearLeads();
   res.json({ message: 'Đã xóa toàn bộ leads' });
 }
 
-function cleanPhones(req, res) {
-  const { fixedCount, total } = leadService.cleanPhones();
+async function cleanPhones(req, res) {
+  const { fixedCount, total } = await leadService.cleanPhones();
   logSystem(`Clean phone data: đã sửa ${fixedCount}/${total} leads`, 'INFO');
   res.json({ success: true, fixedCount, total });
 }

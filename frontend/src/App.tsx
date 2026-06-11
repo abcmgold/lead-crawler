@@ -100,7 +100,7 @@ export default function App() {
     { path: '/crawler', label: 'Tìm kiếm & Cào', icon: Search },
     { path: '/leads', label: 'Danh sách Leads', icon: Users },
     { path: '/email', label: 'Gửi Email Hàng Loạt', icon: Mail },
-    { path: '/settings', label: 'Cấu hình SMTP', icon: Settings },
+    { path: '/settings', label: 'Cài đặt', icon: Settings },
   ] as const;
 
   const activeNavClass =
@@ -273,7 +273,11 @@ export default function App() {
             <Route
               path="/settings"
               element={
-                <SettingsTab smtpSettings={smtpSettings} />
+                <SettingsTab
+                  smtpSettings={smtpSettings}
+                  onSettingsUpdated={setSmtpSettings}
+                  showToast={showToast}
+                />
               }
             />
             {/* Catch-all redirect */}

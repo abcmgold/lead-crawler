@@ -8,13 +8,13 @@ const COOKIE_OPTIONS = {
   maxAge: 8 * 60 * 60 * 1000 // 8h
 };
 
-function login(req, res) {
+async function login(req, res) {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: 'Vui lòng nhập username và password' });
   }
 
-  const result = authService.login(username, password);
+  const result = await authService.login(username, password);
   if (!result) {
     return res.status(401).json({ error: 'Sai username hoặc password' });
   }
@@ -32,4 +32,20 @@ function me(req, res) {
   res.json({ user: req.user });
 }
 
-module.exports = { login, logout, me };
+async function changePassword(req, res) {
+  const { oldPassword, newPassword } = req.body;
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ error: 'Vui lòng nhập mật khẩu hiện tại và mật khẩu mới' });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
+  }
+
+  const result = await authService.changePassword(req.user.username, oldPassword, newPassword);
+  if (!result.success) {
+    return res.status(400).json({ error: result.error });
+  }
+  res.json({ message: 'Đổi mật khẩu thành công' });
+}
+
+module.exports = { login, logout, me, changePassword };

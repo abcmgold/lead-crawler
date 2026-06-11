@@ -1,5 +1,5 @@
 const nodemailer = require('nodemailer');
-const jsonRepo = require('../repositories/json.repository');
+const dbRepo = require('../repositories/db.repository');
 const { logSystem } = require('../utils/logger');
 
 function buildTransporter(smtp) {
@@ -32,7 +32,7 @@ function buildAttachments(attachments) {
 // Sends a personalized email to each lead/custom address sequentially, persisting emailStatus
 async function sendBulkEmails({ leadIds, customEmails, subject, body, attachments, smtp }) {
   const transporter = buildTransporter(smtp);
-  const leads = jsonRepo.getLeads();
+  const leads = await dbRepo.getLeads();
 
   let leadsToSend = [];
 
@@ -89,14 +89,16 @@ async function sendBulkEmails({ leadIds, customEmails, subject, body, attachment
       logSystem(`[GỬI LỖI] ${lead.email} | Chi tiết: ${error.message}`, 'ERROR');
     }
 
+    // Persist updated emailStatus for leads that exist in storage (skip ad-hoc custom emails)
+    if (!lead.id.startsWith('custom_')) {
+      await dbRepo.updateLeadStatus(lead.id, lead.emailStatus);
+    }
+
     // Delay slightly between sends
     await new Promise(resolve => setTimeout(resolve, 2000));
   }
 
   logSystem(`Chiến dịch hoàn thành. Thành công: ${successCount}, Thất bại: ${failCount}`, 'INFO');
-
-  // Persist updated emailStatus for leads that exist in storage
-  jsonRepo.saveLeads(leads);
 
   return {
     successCount,

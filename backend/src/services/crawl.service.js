@@ -2,7 +2,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const { getRandomUserAgent } = require('../utils/userAgent');
 const { logSystem } = require('../utils/logger');
-const jsonRepo = require('../repositories/json.repository');
+const dbRepo = require('../repositories/db.repository');
 const leadService = require('./lead.service');
 
 // Helper to search DuckDuckGo html as a fallback
@@ -259,8 +259,6 @@ async function performCrawl(keyword) {
   }
 
   const results = [];
-  const data = jsonRepo.getAll();
-  if (!data.logs) data.logs = [];
   let newLeadsCount = 0;
 
   for (const url of urls) {
@@ -269,11 +267,11 @@ async function performCrawl(keyword) {
     logSystem(`Crawl website: ${url} | Trạng thái: ${crawled.status} | Emails tìm thấy: ${crawled.emails.length}`, 'INFO');
 
     if (crawled.status === 'success') {
-      newLeadsCount += leadService.addLeadsFromCrawl(data.leads, crawled, keyword);
+      newLeadsCount += await leadService.addLeadsFromCrawl(crawled, keyword);
     }
   }
 
-  data.logs.push({
+  await dbRepo.addLog({
     id: '_' + Math.random().toString(36).substr(2, 9),
     keyword,
     timestamp: new Date().toISOString(),
@@ -282,7 +280,6 @@ async function performCrawl(keyword) {
   });
 
   logSystem(`Hoàn tất cào cho từ khóa: "${keyword}". Thêm mới ${newLeadsCount} Leads vào CSDL.`, 'INFO');
-  jsonRepo.saveAll(data);
 
   return { success: true, count: results.length, newLeadsCount, results };
 }

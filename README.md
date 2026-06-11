@@ -21,8 +21,8 @@ Dự án gồm 2 phần:
 - 🔎 **Crawl Leads**: Nhập từ khóa hoặc URL, hệ thống tự tìm kiếm (Google → DuckDuckGo dự phòng), cào website, tự phát hiện trang "Liên hệ/Giới thiệu" và trích xuất email + số điện thoại.
 - 📋 **Quản lý Leads**: Bảng danh sách leads, tìm kiếm/lọc, phân trang, chọn nhiều, xuất CSV (hỗ trợ tiếng Việt), xóa toàn bộ.
 - 📧 **Gửi Email hàng loạt**: Soạn email với placeholder cá nhân hóa (`{{Name}}`, `{{Email}}`, `{{Phone}}`, `{{Website}}`), đính kèm file, theo dõi log gửi realtime, cập nhật trạng thái từng lead.
-- ⚙️ **Cấu hình SMTP (chỉ xem)**: SMTP được cấu hình qua biến môi trường `.env` trên server, giao diện chỉ hiển thị (không cho sửa/lưu qua web).
-- 🔐 **Đăng nhập**: Một tài khoản admin duy nhất, xác thực bằng JWT lưu trong cookie httpOnly.
+- ⚙️ **Cấu hình SMTP**: Cấu hình host/port/tài khoản/người gửi được lưu trong PostgreSQL, chỉnh sửa và lưu trực tiếp qua giao diện (tab Cài đặt).
+- 🔐 **Đăng nhập**: Một tài khoản admin duy nhất (lưu trong PostgreSQL), xác thực bằng JWT lưu trong cookie httpOnly, có thể đổi mật khẩu qua giao diện.
 - 🕘 **Lịch sử quét**: Theo dõi các lượt crawl trước đó (từ khóa, số website, số leads mới).
 
 Xem chi tiết tại [docs/features.md](./docs/features.md).
@@ -37,7 +37,7 @@ Xem chi tiết tại [docs/features.md](./docs/features.md).
 - Crawl dữ liệu: `axios` + `cheerio`
 - Gửi email: `nodemailer`
 - Cấu hình: `dotenv`
-- Lưu trữ: file JSON (`backend/data.json`)
+- Lưu trữ: PostgreSQL (`pg`), kết nối qua `DATABASE_URL` (leads, lịch sử crawl, tài khoản admin, cấu hình SMTP)
 
 ### Frontend
 - React 19 + TypeScript + Vite
@@ -56,14 +56,14 @@ mvp/
 │   ├── src/
 │   │   ├── controllers/   # Xử lý request
 │   │   ├── services/      # Business logic (crawl, email, auth, settings, lead)
-│   │   ├── repositories/  # Lưu trữ dữ liệu (json.repository.js -> data.json)
+│   │   ├── repositories/  # db.repository.js -> PostgreSQL (leads, crawl_logs, users, smtp_settings)
+│   │   ├── db/             # pool.js (pg connection), schema.sql
 │   │   ├── routes/        # Định nghĩa endpoint
 │   │   ├── middlewares/    # auth.middleware, authorize.middleware
 │   │   └── utils/          # logger, userAgent
+│   ├── scripts/           # init-db.js, migrate-data.js, migrate-auth-settings.js, create-admin.js
 │   ├── server.js          # Điểm khởi chạy
-│   ├── data.json          # CSDL dạng JSON (không commit)
-│   ├── .env / .env.example
-│   └── clean_phones.js    # Script dọn dữ liệu số điện thoại
+│   └── .env / .env.example
 │
 ├── frontend/           # React app
 │   └── src/
@@ -84,6 +84,7 @@ mvp/
 
 ### Yêu cầu
 - Node.js >= 18
+- PostgreSQL (local hoặc cloud, vd Neon/Supabase)
 
 ### Backend
 
@@ -91,7 +92,9 @@ mvp/
 cd backend
 npm install
 copy .env.example .env   # Windows (hoặc cp trên macOS/Linux)
-# Điền các biến môi trường trong .env (xem docs/backend.md)
+# Điền các biến môi trường trong .env (xem docs/backend.md), đặc biệt DATABASE_URL
+node scripts/init-db.js   # tạo database (nếu chưa có) + áp dụng schema
+node scripts/create-admin.js <username> <password>   # tạo tài khoản admin đầu tiên
 node server.js
 ```
 
@@ -120,20 +123,16 @@ npm run build
 | Biến | Mô tả |
 |---|---|
 | `PORT` | Cổng chạy API (mặc định `3000`) |
+| `DATABASE_URL` | Connection string PostgreSQL (vd `postgresql://user:pass@host:5432/leadcrawler?schema=public`) |
 | `JWT_SECRET` | Khóa bí mật ký JWT |
 | `JWT_EXPIRES_IN` | Thời hạn token (vd `8h`) |
-| `ADMIN_USERNAME` | Tên đăng nhập admin |
-| `ADMIN_PASSWORD_HASH` | Hash bcrypt của mật khẩu admin |
-| `ADMIN_ROLE` | Vai trò (mặc định `ADMIN`) |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE` | Cấu hình máy chủ SMTP gửi email |
-| `SMTP_SENDER_NAME`, `SMTP_SENDER_EMAIL` | Tên & email người gửi hiển thị |
 
-Chi tiết và cách tạo `ADMIN_PASSWORD_HASH`: xem [docs/backend.md](./docs/backend.md#xác-thực--biến-môi-trường).
+Tài khoản admin (`users`) và cấu hình SMTP (`smtp_settings`) được lưu trong PostgreSQL — tạo tài khoản đầu tiên bằng `node scripts/create-admin.js <username> <password>`, cấu hình SMTP qua tab Cài đặt sau khi đăng nhập. Chi tiết: xem [docs/backend.md](./docs/backend.md#xác-thực--biến-môi-trường).
 
 ---
 
 ## 6. Lưu ý bảo mật
 
-- File `.env`, `data.json`, `system.log`, `.claude/`, `.agent/` đã được thêm vào `.gitignore` — **không commit**.
-- SMTP credentials chỉ tồn tại trên server (`.env`), API `/api/settings` luôn che (mask) mật khẩu khi trả về client.
-- Không có cách nào sửa cấu hình SMTP qua giao diện — phải sửa trực tiếp `.env` trên server rồi khởi động lại backend.
+- File `.env`, `system.log`, `.mcp.json`, `.claude/`, `.agent/` đã được thêm vào `.gitignore` — **không commit** (chứa secrets/connection string).
+- SMTP credentials lưu trong PostgreSQL (bảng `smtp_settings`); API `/api/settings` luôn che (mask) mật khẩu khi trả về client.
+- Cấu hình SMTP và đổi mật khẩu admin có thể thực hiện trực tiếp qua giao diện (tab Cài đặt, yêu cầu đăng nhập với role `ADMIN`).

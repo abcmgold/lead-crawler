@@ -18,7 +18,7 @@ frontend/src/
     ├── CrawlerTab.tsx          # Tab "Tìm kiếm & Cào"
     ├── LeadsTab.tsx            # Tab "Danh sách Leads"
     ├── CampaignTab.tsx         # Tab "Gửi Email Hàng Loạt"
-    ├── SettingsTab.tsx         # Tab "Cấu hình SMTP" (chỉ xem)
+    ├── SettingsTab.tsx         # Tab "Cài đặt" (cấu hình SMTP + đổi mật khẩu)
     ├── ConfirmDialog.tsx       # Modal xác nhận dùng chung toàn app
     ├── types.ts                # Interfaces: Lead, SmtpSettings, HistoryItem
     └── ui/                     # Component UI dùng chung (style shadcn/Radix)
@@ -51,7 +51,7 @@ frontend/src/
 | `/crawler` | `CrawlerTab` | Tìm kiếm & cào dữ liệu |
 | `/leads` | `LeadsTab` | Danh sách leads |
 | `/email` | `CampaignTab` | Gửi email hàng loạt |
-| `/settings` | `SettingsTab` | Cấu hình SMTP (chỉ xem) |
+| `/settings` | `SettingsTab` | Cài đặt: cấu hình SMTP + đổi mật khẩu |
 | `*` | → redirect `/crawler` | |
 
 ### Bảo vệ route
@@ -138,11 +138,12 @@ Mọi gọi API trong app dùng `apiFetch` thay cho `fetch` trực tiếp để 
   - Console log có timestamp, màu theo trạng thái (thành công/thất bại/info).
 - Gửi: `POST /api/send-emails` với `{ leadIds, customEmails, subject, body, attachments }`. Sau khi xong gọi `refreshLeads` (= `loadLeads`) để cập nhật `emailStatus` mới nhất.
 
-### `SettingsTab.tsx` — Cấu hình SMTP (chỉ xem)
-- Nhận `smtpSettings` từ `App.tsx` (đã load từ `GET /api/settings`).
-- **Toàn bộ input đều `disabled`/`readOnly`**: SMTP Host, Port, Username, Mật khẩu (hiển thị `********`), Tên người gửi, Email người gửi, checkbox SSL/TLS.
-- Không có nút lưu, không gọi API ghi.
-- Hiển thị banner cảnh báo: *"Chỉ xem - Để thay đổi, vui lòng cập nhật biến môi trường trên server"*.
+### `SettingsTab.tsx` — Cài đặt (Cấu hình SMTP + Đổi mật khẩu)
+- Nhận `smtpSettings`, `onSettingsUpdated`, `showToast` từ `App.tsx`.
+- Dùng `Tabs`/`TabsList`/`TabsTrigger`/`TabsContent` (Radix, `components/ui/tabs.tsx`) để chia thành 2 tab con: **Cấu hình SMTP** và **Đổi mật khẩu**.
+- **Tab Cấu hình SMTP**: input có thể chỉnh sửa (Host, Port, Username, Mật khẩu, Tên người gửi, Email người gửi, checkbox SSL/TLS). Nút **Lưu cấu hình** gọi `POST /api/settings`; kết quả trả về (đã che `pass`) được đẩy ngược lên `App.tsx` qua `onSettingsUpdated` để cập nhật badge SMTP trên header.
+- **Tab Đổi mật khẩu**: 3 ô (mật khẩu hiện tại, mật khẩu mới, xác nhận), validate độ dài tối thiểu 6 ký tự và khớp xác nhận trước khi gọi `POST /api/auth/change-password`.
+- Cả hai tab dùng `showToast` để báo thành công/lỗi.
 
 ### `ConfirmDialog.tsx` — Modal xác nhận dùng chung
 ```ts

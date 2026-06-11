@@ -1,11 +1,11 @@
-const jsonRepo = require('../repositories/json.repository');
+const dbRepo = require('../repositories/db.repository');
 
-function getHistory(req, res) {
-  res.json(jsonRepo.getLogs());
+async function getHistory(req, res) {
+  res.json(await dbRepo.getLogs());
 }
 
-function clearHistory(req, res) {
-  jsonRepo.saveLogs([]);
+async function clearHistory(req, res) {
+  await dbRepo.clearLogs();
   res.json({ message: 'Đã xóa lịch sử quét' });
 }
 

@@ -15,7 +15,7 @@ async function sendEmails(req, res) {
     return res.status(400).json({ error: 'Tiêu đề và nội dung email không được bỏ trống' });
   }
 
-  const smtp = settingsService.getSettings();
+  const smtp = await settingsService.getSettings();
   if (!smtp.host || !smtp.user || !smtp.pass) {
     return res.status(400).json({ error: 'SMTP chưa được cấu hình trên server (.env)' });
   }

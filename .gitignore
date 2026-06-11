@@ -26,6 +26,7 @@ data.json
 # Agent / editor tooling
 .agent/
 .claude/
+.mcp.json
 
 # Editor directories and files
 .vscode/*

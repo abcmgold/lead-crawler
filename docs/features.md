@@ -44,19 +44,23 @@
   - Log chi tiết theo thời gian thực, có màu phân biệt thành công/thất bại/thông tin.
 - Sau khi gửi: cập nhật trạng thái từng lead (`Gửi thành công` / `Thất bại: <lý do>`), đồng bộ lại với danh sách leads.
 - Để tránh bị nhà cung cấp email chặn vì spam: hệ thống **tự động delay 2 giây** giữa mỗi email gửi đi.
-- Yêu cầu SMTP đã được cấu hình (`.env` trên server) trước khi cho phép gửi.
+- Yêu cầu SMTP đã được cấu hình (bảng `smtp_settings` trong DB) trước khi cho phép gửi.
 
-## 5. Cấu hình SMTP (`/settings`)
+## 5. Cài đặt (`/settings`)
 
-- Hiển thị (chỉ xem) thông tin SMTP đang dùng để gửi email:
+### Cấu hình SMTP
+- Form chỉnh sửa cấu hình SMTP dùng để gửi email:
   - SMTP Host, Port
   - Email/Username đăng nhập
-  - Mật khẩu/SMTP Key (luôn hiển thị dạng che `********`)
+  - Mật khẩu/SMTP Key (hiển thị dạng che `********`; để trống hoặc giữ nguyên `********` khi lưu sẽ không đổi mật khẩu cũ)
   - Tên người gửi hiển thị, Email người gửi
-  - Trạng thái SSL/TLS
-- **Không thể chỉnh sửa hoặc lưu qua giao diện** — toàn bộ cấu hình SMTP nằm trong file `.env` trên server.
-- Để thay đổi: sửa `.env` rồi khởi động lại backend.
+  - Checkbox SSL/TLS
+- Nút **Lưu cấu hình** gọi `POST /api/settings`, lưu trực tiếp vào PostgreSQL (bảng `smtp_settings`) và áp dụng ngay cho lần gửi email tiếp theo.
 - Badge trạng thái SMTP trên header (`SMTP: OK` / `CHƯA CẤU HÌNH`) phản ánh `smtpSettings.host` có giá trị hay không.
+
+### Đổi mật khẩu đăng nhập
+- Form nhập mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu mới.
+- Gọi `POST /api/auth/change-password`, kiểm tra mật khẩu hiện tại trước khi cập nhật hash mới vào bảng `users`.
 
 ## 6. Thành phần dùng chung
 
