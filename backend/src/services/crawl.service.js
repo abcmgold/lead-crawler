@@ -41,14 +41,16 @@ async function duckduckgoSearch(query) {
   }
 }
 
-// Helper to search Google via scraping (falls back to DuckDuckGo if blocked/empty)
+// Helper to search Google via scraping
 async function googleSearch(query) {
   try {
     const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=45`;
     const response = await axios.get(url, {
       headers: {
         'User-Agent': getRandomUserAgent(),
-        'Accept-Language': 'vi,en-US;q=0.9,en;q=0.8'
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'vi,en-US;q=0.9,en;q=0.8',
+        'Upgrade-Insecure-Requests': '1'
       },
       timeout: 10000
     });
@@ -79,15 +81,94 @@ async function googleSearch(query) {
       }
     });
 
-    if (urls.length > 0) {
-      return urls.slice(0, 40);
-    }
+    return urls.slice(0, 40);
   } catch (err) {
     logSystem(`Lỗi Google Search: ${err.stack || err.message}`, 'ERROR');
-    console.warn('Google blocked search request. Falling back to DuckDuckGo...', err.message);
+    console.warn('Google blocked search request or timed out.', err.message);
+    return [];
+  }
+}
+
+// Helper to search Bing via scraping with base64 query param decoding (as a second fallback)
+async function bingSearch(query) {
+  const urls = [];
+  const userAgent = getRandomUserAgent();
+  let nextUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
+  let cookieHeader = '';
+
+  for (let pageNum = 1; pageNum <= 3; pageNum++) {
+    if (!nextUrl) break;
+    
+    try {
+      const response = await axios.get(nextUrl, {
+        headers: {
+          'User-Agent': userAgent,
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'vi,en-US;q=0.9,en;q=0.8',
+          'Cookie': cookieHeader
+        },
+        timeout: 10000
+      });
+
+      // Extract cookies for subsequent page requests
+      const setCookies = response.headers['set-cookie'];
+      if (setCookies) {
+        cookieHeader = setCookies.map(c => c.split(';')[0]).join('; ');
+      }
+
+      const $ = cheerio.load(response.data);
+      let pageLinksCount = 0;
+      let tempNextUrl = '';
+
+      $('a').each((i, el) => {
+        const href = $(el).attr('href');
+        const text = $(el).text().trim();
+
+        // Check if this is the link to the next page (e.g. text "2" or "3" or "Tiếp theo" / "Next")
+        const targetPageStr = (pageNum + 1).toString();
+        if ((text === targetPageStr || text.toLowerCase().includes('tiếp') || text.toLowerCase().includes('next')) && href && href.includes('first=')) {
+          tempNextUrl = href.startsWith('http') ? href : `https://www.bing.com${href}`;
+        }
+
+        // Parse search results links
+        if (href && href.includes('/ck/a')) {
+          try {
+            const parsedUrl = new URL(href, 'https://www.bing.com');
+            const uParam = parsedUrl.searchParams.get('u');
+            if (uParam && uParam.startsWith('a1')) {
+              const base64Str = uParam.substring(2);
+              const normalizedBase64 = base64Str.replace(/-/g, '+').replace(/_/g, '/');
+              const decodedUrl = Buffer.from(normalizedBase64, 'base64').toString('utf-8');
+              
+              if (decodedUrl && decodedUrl.startsWith('http') && !decodedUrl.includes('bing.com') && !decodedUrl.includes('microsoft.com') && !decodedUrl.includes('google.com') && !decodedUrl.includes('youtube.com') && !decodedUrl.includes('facebook.com') && !decodedUrl.includes('twitter.com') && !decodedUrl.includes('instagram.com')) {
+                try {
+                  const checkUrl = new URL(decodedUrl);
+                  if (!urls.some(u => new URL(u).hostname === checkUrl.hostname)) {
+                    urls.push(decodedUrl);
+                    pageLinksCount++;
+                  }
+                } catch(e) {}
+              }
+            }
+          } catch (e) {}
+        }
+      });
+
+      if (pageLinksCount === 0 || !tempNextUrl) {
+        break;
+      }
+
+      nextUrl = tempNextUrl;
+      // Delay slightly between requests
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (err) {
+      logSystem(`Lỗi Bing Search trang ${pageNum}: ${err.stack || err.message}`, 'ERROR');
+      console.warn(`Bing blocked search page ${pageNum} or timed out.`, err.message);
+      break;
+    }
   }
 
-  return await duckduckgoSearch(query);
+  return urls.slice(0, 40);
 }
 
 function extractContacts(html, info) {
@@ -249,8 +330,22 @@ async function performCrawl(keyword) {
     logSystem(`Phát hiện đầu vào là URL/Email. Crawl trực tiếp: ${directUrl}`, 'INFO');
     urls = [directUrl];
   } else {
+    // 1. Try Google Search
     urls = await googleSearch(keyword);
-    logSystem(`Kết quả tìm kiếm cho "${keyword}" trả về ${urls.length} URLs`, 'INFO');
+    
+    // 2. Fallback to DuckDuckGo
+    if (urls.length === 0) {
+      logSystem(`Google Search trả về 0 kết quả. Thử qua DuckDuckGo...`, 'INFO');
+      urls = await duckduckgoSearch(keyword);
+    }
+    
+    // 3. Fallback to Bing Search
+    if (urls.length === 0) {
+      logSystem(`DuckDuckGo trả về 0 kết quả. Thử qua Bing...`, 'INFO');
+      urls = await bingSearch(keyword);
+    }
+    
+    logSystem(`Kết quả tìm kiếm cho "${keyword}" tổng cộng trả về ${urls.length} URLs`, 'INFO');
   }
 
   if (urls.length === 0) {
@@ -283,6 +378,7 @@ async function performCrawl(keyword) {
 
   return { success: true, count: results.length, newLeadsCount, results };
 }
+
 
 module.exports = {
   duckduckgoSearch,
