@@ -70,15 +70,19 @@ async function sendBulkEmails({ leadIds, customEmails, subject, body, attachment
       .replace(/{{Phone}}/g, lead.phone)
       .replace(/{{Website}}/g, lead.website);
 
+    // Check if the body contains HTML tags to treat it as HTML
+    const isHtml = /<[a-z][\s\S]*>/i.test(personalizedBody);
+
     try {
       await transporter.sendMail({
         from: `"${smtp.senderName || 'Hệ thống gửi Email'}" <${smtp.senderEmail || smtp.user}>`,
         to: lead.email,
         subject: subject,
-        text: personalizedBody,
-        html: personalizedBody.replace(/\n/g, '<br>'),
+        text: isHtml ? personalizedBody.replace(/<[^>]*>/g, '') : personalizedBody,
+        html: isHtml ? personalizedBody : personalizedBody.replace(/\n/g, '<br>'),
         attachments: attachmentsToSend
       });
+
 
       lead.emailStatus = 'Gửi thành công';
       successCount++;

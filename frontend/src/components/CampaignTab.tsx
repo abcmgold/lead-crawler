@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Send, X, Paperclip, Loader2, PlayCircle, Layers } from 'lucide-react';
 import { Lead, SmtpSettings } from './types';
 import { apiFetch } from '@/lib/api';
+import RichTextEditor from './RichTextEditor';
 
 interface CampaignTabProps {
   selectedLeads: Lead[];
@@ -174,17 +175,16 @@ export default function CampaignTab({ selectedLeads, onRemoveLead, smtpSettings,
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-400">Nội dung email (Hỗ trợ HTML)</label>
-            <textarea
-              rows={8}
-              className="bg-slate-950/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300 font-mono resize-y placeholder-slate-600"
-              placeholder={`Chào {{Name}},\n\nTôi thấy website của bạn tại {{Website}} có dịch vụ rất thú vị...`}
+          <div className="flex flex-col gap-1.5 relative">
+            <label className="text-xs font-semibold text-slate-400">Nội dung email</label>
+            <RichTextEditor
               value={body}
-              onChange={(e) => setBody(e.target.value)}
+              onChange={setBody}
+              placeholder="Chào {{Name}},&#10;&#10;Tôi thấy website của bạn tại {{Website}} có dịch vụ rất thú vị..."
               disabled={isSending}
             />
           </div>
+
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-slate-400">Tự nhập thêm Email gửi riêng (Xuống dòng hoặc phẩy để phân tách)</label>
