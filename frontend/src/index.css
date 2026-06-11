@@ -1,0 +1,176 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  /* Quantum Rose Dark Theme Variables (Oklch) */
+  --background: oklch(0.1208 0.0335 313.7159);
+  --foreground: oklch(0.9224 0.0807 326.6356);
+  --card: oklch(0.1698 0.0461 313.2337);
+  --card-foreground: oklch(0.9224 0.0807 326.6356);
+  --popover: oklch(0.1698 0.0461 313.2337);
+  --popover-foreground: oklch(0.9224 0.0807 326.6356);
+  --primary: oklch(0.7043 0.2019 332.0212);
+  --primary-foreground: oklch(0.1208 0.0335 327.5673);
+  --secondary: oklch(0.2384 0.0715 319.6465);
+  --secondary-foreground: oklch(0.9224 0.0807 326.6356);
+  --muted: oklch(0.2001 0.0570 312.3525);
+  --muted-foreground: oklch(0.7516 0.1223 327.1132);
+  --accent: oklch(0.2658 0.0901 325.7655);
+  --accent-foreground: oklch(0.9224 0.0807 326.6356);
+  --destructive: oklch(0.6539 0.2441 7.1740);
+  --destructive-foreground: oklch(0.9821 0 0);
+  --border: oklch(0.2280 0.0702 313.5393);
+  --input: oklch(0.2384 0.0715 319.6465);
+  --ring: oklch(0.7043 0.2019 332.0212);
+  --radius: 0.75rem;
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  /* Theme utilities mapping */
+  --color-bgPrimary: var(--background);
+  --color-bgSecondary: rgba(30, 20, 35, 0.45);
+  --color-bgTertiary: var(--card);
+  --color-accentPrimary: var(--primary);
+  --color-accentPrimaryHover: oklch(0.75 0.22 332.02);
+  --color-accentSuccess: #10b981;
+  --color-accentDanger: var(--destructive);
+  --color-accentWarning: #f59e0b;
+  --font-sans: 'Quicksand', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+
+  --animate-fade-in: fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-slide-up: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-scale-in: scale-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      transform: translateY(12px);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      transform: scale(0.97);
+      opacity: 0;
+    }
+
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}
+
+@layer base {
+  html {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: auto;
+  }
+
+  body {
+    @apply bg-[#08050a] text-slate-100 font-sans antialiased m-0 p-0 box-border min-h-screen relative;
+    overflow: visible;
+    background-image:
+      radial-gradient(circle at 50% -20%, oklch(0.25 0.12 332.02 / 0.25), transparent 60%),
+      radial-gradient(circle at 10% 80%, oklch(0.20 0.10 320 / 0.12), transparent 40%),
+      radial-gradient(circle at 90% 60%, oklch(0.30 0.15 340 / 0.08), transparent 45%);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.01);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.16);
+  }
+}
+
+/* Glassmorphism style utility with Quantum Rose tint */
+.glass-panel {
+  background: rgba(25, 15, 30, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid oklch(0.7043 0.2019 332.0212 / 0.1);
+}
+
+.glass-card-interactive {
+  background: rgba(25, 15, 30, 0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid oklch(0.7043 0.2019 332.0212 / 0.06);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-interactive:hover {
+  background: rgba(25, 15, 30, 0.5);
+  border-color: oklch(0.7043 0.2019 332.0212 / 0.3);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Glowing text effects */
+.glow-text {
+  text-shadow: 0 0 20px oklch(0.7043 0.2019 332.0212 / 0.4);
+}
+
+/* Sliding active indicator for tab bar */
+.nav-glow-indicator {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, oklch(0.7043 0.2019 332.0212), #ec4899);
+  transition: all 0.30s cubic-bezier(0.16, 1, 0.3, 1);
+}
