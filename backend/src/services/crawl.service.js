@@ -34,7 +34,7 @@ async function duckduckgoSearch(query) {
       }
     });
 
-    return urls.slice(0, 40);
+    return urls.slice(0, 100);
   } catch (err) {
     console.error('Lỗi DuckDuckGo search:', err.message);
     return [];
@@ -44,7 +44,7 @@ async function duckduckgoSearch(query) {
 // Helper to search Google via scraping
 async function googleSearch(query) {
   try {
-    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=45`;
+    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=100`;
     const response = await axios.get(url, {
       headers: {
         'User-Agent': getRandomUserAgent(),
@@ -81,7 +81,7 @@ async function googleSearch(query) {
       }
     });
 
-    return urls.slice(0, 40);
+    return urls.slice(0, 100);
   } catch (err) {
     logSystem(`Lỗi Google Search: ${err.stack || err.message}`, 'ERROR');
     console.warn('Google blocked search request or timed out.', err.message);
@@ -96,7 +96,7 @@ async function bingSearch(query) {
   let nextUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
   let cookieHeader = '';
 
-  for (let pageNum = 1; pageNum <= 3; pageNum++) {
+  for (let pageNum = 1; pageNum <= 10; pageNum++) {
     if (!nextUrl) break;
     
     try {
@@ -168,7 +168,7 @@ async function bingSearch(query) {
     }
   }
 
-  return urls.slice(0, 40);
+  return urls.slice(0, 100);
 }
 
 function extractContacts(html, info) {
