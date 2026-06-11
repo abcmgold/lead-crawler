@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://lead-crawler-beta.vercel.app/api/:path*" }
+  ]
+}
