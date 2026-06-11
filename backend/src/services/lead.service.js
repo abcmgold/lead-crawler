@@ -24,23 +24,26 @@ async function cleanPhones() {
 }
 
 // Persist new leads (deduped by email) found from a crawl result. Returns how many were added.
-async function addLeadsFromCrawl(crawled, keyword) {
+async function addLeadsFromCrawl(crawled, keyword, crawlLogId) {
   let newLeadsCount = 0;
 
   for (const email of crawled.emails) {
     const existing = await dbRepo.findLeadByEmail(email);
+    const uniquePhones = [...new Set(crawled.phones)].slice(0, 2);
+
+    await dbRepo.insertLead({
+      id: existing ? existing.id : '_' + Math.random().toString(36).substr(2, 9),
+      name: crawled.title || (existing ? existing.name : ''),
+      email,
+      phone: uniquePhones.length > 0 ? uniquePhones.join(', ') : (existing ? existing.phone : ''),
+      website: crawled.url || (existing ? existing.website : ''),
+      keyword,
+      createdAt: new Date().toISOString(),
+      emailStatus: existing ? existing.emailStatus : 'Chưa gửi',
+      crawlLogId
+    });
+
     if (!existing) {
-      const uniquePhones = [...new Set(crawled.phones)].slice(0, 2);
-      await dbRepo.insertLead({
-        id: '_' + Math.random().toString(36).substr(2, 9),
-        name: crawled.title,
-        email,
-        phone: uniquePhones.join(', ') || '',
-        website: crawled.url,
-        keyword,
-        createdAt: new Date().toISOString(),
-        emailStatus: 'Chưa gửi'
-      });
       newLeadsCount++;
     }
   }

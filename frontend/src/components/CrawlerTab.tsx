@@ -1,12 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Loader2, Clock, Trash2, Sparkles } from 'lucide-react';
-import { HistoryItem } from './types';
+import { createPortal } from 'react-dom';
+import { Search, Loader2, Clock, Trash2, Sparkles, X, ExternalLink, ChevronFirst, ChevronLast } from 'lucide-react';
+import { HistoryItem, Lead } from './types';
 import { apiFetch } from '@/lib/api';
 import ConfirmDialog from './ConfirmDialog';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface CrawlerTabProps {
   onCrawlSuccess: () => void;
   showToast: (message: string, isError?: boolean) => void;
+  leads: Lead[];
 }
 
 interface ConsoleLog {
@@ -15,7 +34,7 @@ interface ConsoleLog {
   type: 'info' | 'success' | 'warning' | 'error';
 }
 
-export default function CrawlerTab({ onCrawlSuccess, showToast }: CrawlerTabProps) {
+export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: CrawlerTabProps) {
   const [keyword, setKeyword] = useState('');
   const [isCrawling, setIsCrawling] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -24,6 +43,52 @@ export default function CrawlerTab({ onCrawlSuccess, showToast }: CrawlerTabProp
   const [showProgressCard, setShowProgressCard] = useState(false);
   const [crawlStatus, setCrawlStatus] = useState('Đang quét...');
   const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
+  
+  // Leads details modal states
+  const [selectedCrawlLog, setSelectedCrawlLog] = useState<HistoryItem | null>(null);
+  const [showLogLeadsModal, setShowLogLeadsModal] = useState(false);
+  const [modalCurrentPage, setModalCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setModalCurrentPage(1);
+  }, [selectedCrawlLog]);
+
+  const matchingLeads = React.useMemo(() => {
+    if (!selectedCrawlLog) return [];
+    return leads.filter(lead => {
+      if (lead.crawlLogId === selectedCrawlLog.id) return true;
+      // Fallback matching
+      if (lead.keyword === selectedCrawlLog.keyword) {
+        const leadTime = new Date(lead.createdAt).getTime();
+        const logTime = new Date(selectedCrawlLog.timestamp).getTime();
+        return Math.abs(leadTime - logTime) < 120000; // 2 minutes
+      }
+      return false;
+    });
+  }, [leads, selectedCrawlLog]);
+
+  const modalPageSize = 10;
+  const modalTotalPages = Math.max(1, Math.ceil(matchingLeads.length / modalPageSize));
+  const safeModalPage = Math.min(modalCurrentPage, modalTotalPages);
+  const modalStartIndex = (safeModalPage - 1) * modalPageSize;
+  const pagedModalLeads = matchingLeads.slice(modalStartIndex, modalStartIndex + modalPageSize);
+
+  const goToModalPage = (page: number) => {
+    if (page >= 1 && page <= modalTotalPages) setModalCurrentPage(page);
+  };
+
+  const getModalPageNumbers = (): (number | 'ellipsis')[] => {
+    if (modalTotalPages <= 7) return Array.from({ length: modalTotalPages }, (_, i) => i + 1);
+    const pages: (number | 'ellipsis')[] = [];
+    if (safeModalPage <= 4) {
+      pages.push(1, 2, 3, 4, 5, 'ellipsis', modalTotalPages);
+    } else if (safeModalPage >= modalTotalPages - 3) {
+      pages.push(1, 'ellipsis', modalTotalPages - 4, modalTotalPages - 3, modalTotalPages - 2, modalTotalPages - 1, modalTotalPages);
+    } else {
+      pages.push(1, 'ellipsis', safeModalPage - 1, safeModalPage, safeModalPage + 1, 'ellipsis', modalTotalPages);
+    }
+    return pages;
+  };
 
   const consoleEndRef = useRef<HTMLDivElement>(null);
 
@@ -200,6 +265,10 @@ export default function CrawlerTab({ onCrawlSuccess, showToast }: CrawlerTabProp
       <HistoryCard
         history={history}
         onClearHistoryClick={() => setShowClearHistoryConfirm(true)}
+        onRowClick={(log) => {
+          setSelectedCrawlLog(log);
+          setShowLogLeadsModal(true);
+        }}
       />
 
       {/* Clear history confirmation */}
@@ -212,6 +281,172 @@ export default function CrawlerTab({ onCrawlSuccess, showToast }: CrawlerTabProp
         variant="destructive"
         onConfirm={clearHistory}
       />
+
+      {/* Leads list modal for selected crawl log */}
+      {showLogLeadsModal && selectedCrawlLog && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-white/5 flex justify-between items-center shrink-0">
+              <div>
+                <h3 className="text-lg font-bold text-white font-sans">Kết quả cào cho: "{selectedCrawlLog.keyword}"</h3>
+                <p className="text-xs text-slate-400 mt-1 font-mono">
+                  Thời gian: {new Date(selectedCrawlLog.timestamp).toLocaleString('vi-VN')} | Tìm thấy {matchingLeads.length} leads
+                </p>
+              </div>
+              <button
+                onClick={() => setShowLogLeadsModal(false)}
+                className="text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-xl transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {matchingLeads.length === 0 ? (
+                <div className="text-center py-12 text-slate-500 font-mono">
+                  Không tìm thấy lead nào thuộc phiên cào này hoặc đã bị xóa.
+                </div>
+              ) : (
+                <div className="rounded-xl border border-white/5 bg-slate-950/20 overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-slate-900/60 border-b border-white/5 [&_tr]:border-b-0">
+                      <TableRow className="hover:bg-transparent border-0">
+                        <TableHead className="px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400">Doanh Nghiệp / Site</TableHead>
+                        <TableHead className="px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400">Email</TableHead>
+                        <TableHead className="px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400">Số điện thoại</TableHead>
+                        <TableHead className="px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400">Website</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pagedModalLeads.map((lead) => (
+                        <TableRow key={lead.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                          <TableCell className="px-4 py-3 font-semibold text-slate-200 truncate max-w-[200px] font-sans">
+                            {lead.name}
+                          </TableCell>
+                          <TableCell className="px-4 py-3">
+                            <code className="text-primary font-mono text-xs bg-primary/5 px-2 py-0.5 rounded border border-primary/10 select-all">
+                              {lead.email}
+                            </code>
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-slate-400 font-mono text-xs">
+                            {lead.phone || '—'}
+                          </TableCell>
+                          <TableCell className="px-4 py-3 max-w-[200px] truncate">
+                            <a
+                              href={lead.website}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-slate-400 hover:text-primary hover:underline inline-flex items-center gap-1 transition-colors text-xs font-sans"
+                            >
+                              {lead.website}
+                              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                            </a>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-950/20 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
+              <div className="text-xs text-slate-400 font-mono">
+                {matchingLeads.length > 0 && (
+                  <>
+                    Hiển thị <span className="text-white font-semibold">{modalStartIndex + 1}–{Math.min(modalStartIndex + modalPageSize, matchingLeads.length)}</span> trong số <span className="text-white font-semibold">{matchingLeads.length}</span> leads
+                  </>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-4">
+                {modalTotalPages > 1 && (
+                  <Pagination className="w-auto mx-0">
+                    <PaginationContent className="gap-0.5">
+                      <PaginationItem>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); goToModalPage(1); }}
+                          aria-disabled={safeModalPage === 1}
+                          className={`w-8 h-8 flex items-center justify-center rounded-lg border-0 transition-all text-slate-400 hover:text-white hover:bg-white/5 ${safeModalPage === 1 ? 'opacity-30 pointer-events-none' : ''}`}
+                          aria-label="First page"
+                        >
+                          <ChevronFirst className="w-4 h-4" />
+                        </PaginationLink>
+                      </PaginationItem>
+
+                      <PaginationItem>
+                        <PaginationPrevious
+                          text="Trước"
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); goToModalPage(safeModalPage - 1); }}
+                          aria-disabled={safeModalPage === 1}
+                          className={`text-xs h-8 rounded-lg border-0 text-slate-400 hover:text-white hover:bg-white/5 transition-all ${safeModalPage === 1 ? 'opacity-30 pointer-events-none' : ''}`}
+                        />
+                      </PaginationItem>
+
+                      {getModalPageNumbers().map((page, idx) =>
+                        page === 'ellipsis' ? (
+                          <PaginationItem key={`modal-ellipsis-${idx}`}>
+                            <PaginationEllipsis className="text-slate-500 w-8 h-8" />
+                          </PaginationItem>
+                        ) : (
+                          <PaginationItem key={`modal-page-${page}`}>
+                            <PaginationLink
+                              href="#"
+                              isActive={page === safeModalPage}
+                              onClick={(e) => { e.preventDefault(); goToModalPage(page); }}
+                              className={`w-8 h-8 text-xs rounded-lg border-0 transition-all ${page === safeModalPage
+                                ? 'bg-gradient-to-r from-primary to-pink-600 text-white shadow-md shadow-primary/20 font-bold border-0'
+                                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                }`}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )
+                      )}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          text="Sau"
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); goToModalPage(safeModalPage + 1); }}
+                          aria-disabled={safeModalPage === modalTotalPages}
+                          className={`text-xs h-8 rounded-lg border-0 text-slate-400 hover:text-white hover:bg-white/5 transition-all ${safeModalPage === modalTotalPages ? 'opacity-30 pointer-events-none' : ''}`}
+                        />
+                      </PaginationItem>
+
+                      <PaginationItem>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); goToModalPage(modalTotalPages); }}
+                          aria-disabled={safeModalPage === modalTotalPages}
+                          className={`w-8 h-8 flex items-center justify-center rounded-lg border-0 transition-all text-slate-400 hover:text-white hover:bg-white/5 ${safeModalPage === modalTotalPages ? 'opacity-30 pointer-events-none' : ''}`}
+                          aria-label="Last page"
+                        >
+                          <ChevronLast className="w-4 h-4" />
+                        </PaginationLink>
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+
+                <button
+                  onClick={() => setShowLogLeadsModal(false)}
+                  className="bg-slate-800 hover:bg-slate-700 border border-white/10 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all cursor-pointer font-sans"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
@@ -277,11 +512,13 @@ const ProgressCard = React.memo(function ProgressCard({
 interface HistoryCardProps {
   history: HistoryItem[];
   onClearHistoryClick: () => void;
+  onRowClick: (log: HistoryItem) => void;
 }
 
 const HistoryCard = React.memo(function HistoryCard({
   history,
-  onClearHistoryClick
+  onClearHistoryClick,
+  onRowClick
 }: HistoryCardProps) {
   return (
     <div className="glass-panel rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden">
@@ -320,7 +557,11 @@ const HistoryCard = React.memo(function HistoryCard({
               </tr>
             ) : (
               [...history].reverse().map((log) => (
-                <tr key={log.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                <tr
+                  key={log.id}
+                  className="border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
+                  onClick={() => onRowClick(log)}
+                >
                   <td className="px-5 py-4 text-slate-400 font-mono">
                     {new Date(log.timestamp).toLocaleString('vi-VN')}
                   </td>

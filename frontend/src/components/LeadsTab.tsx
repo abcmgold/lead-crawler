@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Download, Trash2, Search, ExternalLink, ChevronFirst, ChevronLast } from 'lucide-react';
-import { Lead } from './types';
+import { Lead, HistoryItem } from './types';
+import { apiFetch } from '@/lib/api';
 import {
   Pagination,
   PaginationContent,
@@ -26,8 +27,26 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(25);
+  const [crawlLogs, setCrawlLogs] = useState<HistoryItem[]>([]);
+  const [selectedLogId, setSelectedLogId] = useState<string>('');
 
-  React.useEffect(() => {
+  useEffect(() => {
+    loadCrawlLogs();
+  }, []);
+
+  const loadCrawlLogs = async () => {
+    try {
+      const res = await apiFetch('/api/history');
+      if (res.ok) {
+        const data = await res.json();
+        setCrawlLogs([...data].reverse());
+      }
+    } catch (err) {
+      console.error('Lỗi khi tải lịch sử cào:', err);
+    }
+  };
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setSearchQuery(searchTerm);
       setCurrentPage(1);
@@ -36,17 +55,34 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
   }, [searchTerm]);
 
   // Filter leads and sort by newest first
-  const filteredLeads = useMemo(() =>
-    leads
+  const filteredLeads = useMemo(() => {
+    let result = leads;
+
+    if (selectedLogId) {
+      const log = crawlLogs.find(l => l.id === selectedLogId);
+      if (log) {
+        result = result.filter(lead => {
+          if (lead.crawlLogId === selectedLogId) return true;
+          // Fallback matching
+          if (lead.keyword === log.keyword) {
+            const leadTime = new Date(lead.createdAt).getTime();
+            const logTime = new Date(log.timestamp).getTime();
+            return Math.abs(leadTime - logTime) < 120000; // 2 minutes
+          }
+          return false;
+        });
+      }
+    }
+
+    return result
       .filter(lead =>
         lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         lead.phone.includes(searchQuery) ||
         lead.website.toLowerCase().includes(searchQuery.toLowerCase())
       )
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-    [leads, searchQuery]
-  );
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [leads, searchQuery, selectedLogId, crawlLogs]);
 
   // Pagination calculations
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / pageSize));
@@ -130,18 +166,46 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
     <div className="space-y-6 animate-scale-in">
       {/* Top filters and actions */}
       <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
-        {/* Search */}
-        <div className="relative flex-1 max-w-md">
-          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-            <Search className="w-5 h-5" />
-          </span>
-          <input
-            type="text"
-            className="w-full bg-slate-950/40 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300 placeholder-slate-500 font-sans"
-            placeholder="Lọc theo Tên, Email, Số điện thoại..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        {/* Filters Wrapper */}
+        <div className="flex flex-col sm:flex-row gap-3 flex-1 max-w-2xl">
+          {/* Search */}
+          <div className="relative flex-1">
+            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+              <Search className="w-5 h-5" />
+            </span>
+            <input
+              type="text"
+              className="w-full bg-slate-950/40 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300 placeholder-slate-500 font-sans"
+              placeholder="Lọc theo Tên, Email, Số điện thoại..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          {/* Crawl Batch Filter */}
+          <select
+            value={selectedLogId}
+            onChange={(e) => {
+              setSelectedLogId(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="bg-slate-950/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300 cursor-pointer min-w-[200px]"
+          >
+            <option value="" className="bg-slate-950 text-slate-400">-- Lọc theo lần cào --</option>
+            {crawlLogs.map(log => {
+              const dateStr = new Date(log.timestamp).toLocaleString('vi-VN', {
+                month: 'numeric',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric'
+              });
+              return (
+                <option key={log.id} value={log.id} className="bg-slate-950 text-white">
+                  {log.keyword} ({dateStr}) — {log.newLeadsCount} leads
+                </option>
+              );
+            })}
+          </select>
         </div>
 
         {/* Buttons */}
@@ -292,14 +356,15 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
               <PaginationContent className="gap-0.5">
                 {/* First page */}
                 <PaginationItem>
-                  <button
-                    onClick={() => goToPage(1)}
-                    disabled={safePage === 1}
-                    className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-150"
+                  <PaginationLink
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); goToPage(1); }}
+                    aria-disabled={safePage === 1}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg border-0 transition-all text-slate-400 hover:text-white hover:bg-white/5 ${safePage === 1 ? 'opacity-30 pointer-events-none' : ''}`}
                     aria-label="First page"
                   >
                     <ChevronFirst className="w-4 h-4" />
-                  </button>
+                  </PaginationLink>
                 </PaginationItem>
 
                 <PaginationItem>
@@ -346,14 +411,15 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
 
                 {/* Last page */}
                 <PaginationItem>
-                  <button
-                    onClick={() => goToPage(totalPages)}
-                    disabled={safePage === totalPages}
-                    className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-150"
+                  <PaginationLink
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); goToPage(totalPages); }}
+                    aria-disabled={safePage === totalPages}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg border-0 transition-all text-slate-400 hover:text-white hover:bg-white/5 ${safePage === totalPages ? 'opacity-30 pointer-events-none' : ''}`}
                     aria-label="Last page"
                   >
                     <ChevronLast className="w-4 h-4" />
-                  </button>
+                  </PaginationLink>
                 </PaginationItem>
 
               </PaginationContent>

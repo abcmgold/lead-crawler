@@ -9,7 +9,8 @@ function rowToLead(row) {
     website: row.website,
     keyword: row.keyword,
     createdAt: row.created_at.toISOString(),
-    emailStatus: row.email_status
+    emailStatus: row.email_status,
+    crawlLogId: row.crawl_log_id
   };
 }
 
@@ -35,10 +36,13 @@ async function findLeadByEmail(email) {
 
 async function insertLead(lead) {
   await pool.query(
-    `INSERT INTO leads (id, name, email, phone, website, keyword, created_at, email_status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-     ON CONFLICT (email) DO NOTHING`,
-    [lead.id, lead.name, lead.email, lead.phone, lead.website, lead.keyword, lead.createdAt, lead.emailStatus]
+    `INSERT INTO leads (id, name, email, phone, website, keyword, created_at, email_status, crawl_log_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     ON CONFLICT (email) DO UPDATE SET
+       crawl_log_id = EXCLUDED.crawl_log_id,
+       keyword = EXCLUDED.keyword,
+       created_at = EXCLUDED.created_at`,
+    [lead.id, lead.name, lead.email, lead.phone, lead.website, lead.keyword, lead.createdAt, lead.emailStatus, lead.crawlLogId || null]
   );
 }
 

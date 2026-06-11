@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Send, X, Paperclip, Loader2, PlayCircle, Layers, Plus, Edit, Trash2, FileText, ClipboardList } from 'lucide-react';
-import { Lead, SmtpSettings } from './types';
+import { Lead, SmtpSettings, HistoryItem } from './types';
 import { apiFetch } from '@/lib/api';
 import RichTextEditor from './RichTextEditor';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import ConfirmDialog from './ConfirmDialog';
 
 interface CampaignTabProps {
+  allLeads: Lead[];
   selectedLeads: Lead[];
   onRemoveLead: (id: string) => void;
+  onSelectLeads: (ids: Set<string>) => void;
   smtpSettings: SmtpSettings;
   showToast: (message: string, isError?: boolean) => void;
   refreshLeads: () => void;
@@ -28,7 +30,7 @@ interface Template {
   createdAt: string;
 }
 
-export default function CampaignTab({ selectedLeads, onRemoveLead, smtpSettings, showToast, refreshLeads }: CampaignTabProps) {
+export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onSelectLeads, smtpSettings, showToast, refreshLeads }: CampaignTabProps) {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [customEmailsText, setCustomEmailsText] = useState('');
@@ -51,8 +53,13 @@ export default function CampaignTab({ selectedLeads, onRemoveLead, smtpSettings,
   const [tplSubject, setTplSubject] = useState('');
   const [tplBody, setTplBody] = useState('');
 
+  // Crawl logs state
+  const [crawlLogs, setCrawlLogs] = useState<HistoryItem[]>([]);
+  const [selectedLogId, setSelectedLogId] = useState<string>('');
+
   useEffect(() => {
     loadTemplates();
+    loadCrawlLogs();
   }, []);
 
   const loadTemplates = async () => {
@@ -65,6 +72,46 @@ export default function CampaignTab({ selectedLeads, onRemoveLead, smtpSettings,
     } catch (err) {
       console.error('Lỗi khi tải mẫu email:', err);
     }
+  };
+
+  const loadCrawlLogs = async () => {
+    try {
+      const res = await apiFetch('/api/history');
+      if (res.ok) {
+        const data = await res.json();
+        setCrawlLogs([...data].reverse()); // Newest first
+      }
+    } catch (err) {
+      console.error('Lỗi khi tải lịch sử cào:', err);
+    }
+  };
+
+  const handleSelectCrawlLog = (logId: string) => {
+    const log = crawlLogs.find(l => l.id === logId);
+    if (!log) return;
+
+    // Filter leads belonging to this crawl log
+    const matchingLeads = allLeads.filter(lead => {
+      if (lead.crawlLogId === logId) return true;
+
+      // Fallback matching for historical logs: keyword matches and timestamp within 2 minutes
+      if (lead.keyword === log.keyword) {
+        const leadTime = new Date(lead.createdAt).getTime();
+        const logTime = new Date(log.timestamp).getTime();
+        return Math.abs(leadTime - logTime) < 120000;
+      }
+      return false;
+    });
+
+    if (matchingLeads.length === 0) {
+      showToast('Không tìm thấy lead nào thuộc lần cào này.', true);
+      return;
+    }
+
+    const nextSelected = new Set(selectedLeads.map(l => l.id));
+    matchingLeads.forEach(l => nextSelected.add(l.id));
+    onSelectLeads(nextSelected);
+    showToast(`Đã thêm ${matchingLeads.length} leads từ lần cào "${log.keyword}"!`);
   };
 
   const handleCreateNewClick = () => {
@@ -374,6 +421,52 @@ export default function CampaignTab({ selectedLeads, onRemoveLead, smtpSettings,
                       Đã chọn {attachedFiles.length} tệp đính kèm.
                     </span>
                   )}
+                </div>
+
+                {/* Select by crawl batch */}
+                <div className="flex flex-col gap-1.5 bg-slate-950/20 border border-white/5 p-4 rounded-xl">
+                  <div className="flex justify-between items-center text-xs font-semibold text-slate-400">
+                    <span>Chọn người nhận theo lần cào (Quét)</span>
+                    {selectedLeads.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => onSelectLeads(new Set())}
+                        className="text-rose-400 hover:text-rose-300 transition-colors"
+                      >
+                        Bỏ chọn tất cả ({selectedLeads.length})
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex gap-2 mt-1">
+                    <select
+                      className="flex-1 bg-slate-950/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300 cursor-pointer"
+                      value={selectedLogId}
+                      onChange={(e) => setSelectedLogId(e.target.value)}
+                    >
+                      <option value="" className="bg-slate-950 text-slate-400">-- Chọn lần cào để thêm --</option>
+                      {crawlLogs.map(log => {
+                        const dateStr = new Date(log.timestamp).toLocaleString('vi-VN', {
+                          month: 'numeric',
+                          day: 'numeric',
+                          hour: 'numeric',
+                          minute: 'numeric'
+                        });
+                        return (
+                          <option key={log.id} value={log.id} className="bg-slate-950 text-white">
+                            {log.keyword} ({dateStr}) — {log.newLeadsCount} leads
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectCrawlLog(selectedLogId)}
+                      disabled={!selectedLogId}
+                      className="bg-primary hover:opacity-90 text-primary-foreground font-semibold px-4 py-3 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0 cursor-pointer"
+                    >
+                      Thêm vào danh sách
+                    </button>
+                  </div>
                 </div>
 
                 <SelectedLeadsList

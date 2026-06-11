@@ -98,7 +98,7 @@ async function bingSearch(query) {
 
   for (let pageNum = 1; pageNum <= 10; pageNum++) {
     if (!nextUrl) break;
-    
+
     try {
       const response = await axios.get(nextUrl, {
         headers: {
@@ -139,7 +139,7 @@ async function bingSearch(query) {
               const base64Str = uParam.substring(2);
               const normalizedBase64 = base64Str.replace(/-/g, '+').replace(/_/g, '/');
               const decodedUrl = Buffer.from(normalizedBase64, 'base64').toString('utf-8');
-              
+
               if (decodedUrl && decodedUrl.startsWith('http') && !decodedUrl.includes('bing.com') && !decodedUrl.includes('microsoft.com') && !decodedUrl.includes('google.com') && !decodedUrl.includes('youtube.com') && !decodedUrl.includes('facebook.com') && !decodedUrl.includes('twitter.com') && !decodedUrl.includes('instagram.com')) {
                 try {
                   const checkUrl = new URL(decodedUrl);
@@ -147,10 +147,10 @@ async function bingSearch(query) {
                     urls.push(decodedUrl);
                     pageLinksCount++;
                   }
-                } catch(e) {}
+                } catch (e) { }
               }
             }
-          } catch (e) {}
+          } catch (e) { }
         }
       });
 
@@ -171,6 +171,20 @@ async function bingSearch(query) {
   return urls.slice(0, 100);
 }
 
+function decodeCfEmail(encodedString) {
+  try {
+    let email = "";
+    const r = parseInt(encodedString.substr(0, 2), 16);
+    for (let n = 2; n < encodedString.length; n += 2) {
+      const i = parseInt(encodedString.substr(n, 2), 16) ^ r;
+      email += String.fromCharCode(i);
+    }
+    return email.trim();
+  } catch (e) {
+    return null;
+  }
+}
+
 function extractContacts(html, info) {
   // Email regex
   const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,8}/g;
@@ -183,6 +197,21 @@ function extractContacts(html, info) {
         info.emails.push(cleanEmail);
       }
     });
+  }
+
+  // Cloudflare Email Protection decoding
+  const cfEmailRegex = /data-cfemail=["']([a-fA-F0-9]+)["']/gi;
+  let match;
+  while ((match = cfEmailRegex.exec(html)) !== null) {
+    const encoded = match[1];
+    const decoded = decodeCfEmail(encoded);
+    if (decoded) {
+      const cleanEmail = decoded.toLowerCase().trim();
+      const extension = cleanEmail.split('.').pop();
+      if (!['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(extension)) {
+        info.emails.push(cleanEmail);
+      }
+    }
   }
 
   // Stricter Vietnam phone regex:
@@ -332,19 +361,19 @@ async function performCrawl(keyword) {
   } else {
     // 1. Try Google Search
     urls = await googleSearch(keyword);
-    
+
     // 2. Fallback to DuckDuckGo
     if (urls.length === 0) {
       logSystem(`Google Search trả về 0 kết quả. Thử qua DuckDuckGo...`, 'INFO');
       urls = await duckduckgoSearch(keyword);
     }
-    
+
     // 3. Fallback to Bing Search
     if (urls.length === 0) {
       logSystem(`DuckDuckGo trả về 0 kết quả. Thử qua Bing...`, 'INFO');
       urls = await bingSearch(keyword);
     }
-    
+
     logSystem(`Kết quả tìm kiếm cho "${keyword}" tổng cộng trả về ${urls.length} URLs`, 'INFO');
   }
 
@@ -353,6 +382,7 @@ async function performCrawl(keyword) {
     return { success: true, message: 'Không tìm thấy kết quả nào.', results: [] };
   }
 
+  const logId = '_' + Math.random().toString(36).substr(2, 9);
   const results = [];
   let newLeadsCount = 0;
 
@@ -362,12 +392,12 @@ async function performCrawl(keyword) {
     logSystem(`Crawl website: ${url} | Trạng thái: ${crawled.status} | Emails tìm thấy: ${crawled.emails.length}`, 'INFO');
 
     if (crawled.status === 'success') {
-      newLeadsCount += await leadService.addLeadsFromCrawl(crawled, keyword);
+      newLeadsCount += await leadService.addLeadsFromCrawl(crawled, keyword, logId);
     }
   }
 
   await dbRepo.addLog({
-    id: '_' + Math.random().toString(36).substr(2, 9),
+    id: logId,
     keyword,
     timestamp: new Date().toISOString(),
     urlsCount: urls.length,

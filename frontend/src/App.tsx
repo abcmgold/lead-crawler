@@ -244,7 +244,7 @@ export default function App() {
             <Route path="/" element={<Navigate to="/crawler" replace />} />
             <Route
               path="/crawler"
-              element={<CrawlerTab onCrawlSuccess={loadLeads} showToast={showToast} />}
+              element={<CrawlerTab onCrawlSuccess={loadLeads} showToast={showToast} leads={leads} />}
             />
             <Route
               path="/leads"
@@ -262,8 +262,10 @@ export default function App() {
               path="/email"
               element={
                 <CampaignTab
+                  allLeads={leads}
                   selectedLeads={selectedLeadsDetails}
                   onRemoveLead={removeSelectedLead}
+                  onSelectLeads={setSelectedIds}
                   smtpSettings={smtpSettings}
                   showToast={showToast}
                   refreshLeads={loadLeads}

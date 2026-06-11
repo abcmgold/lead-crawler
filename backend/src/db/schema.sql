@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS leads (
   website TEXT NOT NULL DEFAULT '',
   keyword TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  email_status TEXT NOT NULL DEFAULT 'Chưa gửi'
+  email_status TEXT NOT NULL DEFAULT 'Chưa gửi',
+  crawl_log_id TEXT
 );
 
 CREATE TABLE IF NOT EXISTS crawl_logs (

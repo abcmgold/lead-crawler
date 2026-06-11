@@ -7,6 +7,7 @@ export interface Lead {
   emailStatus: string;
   keyword: string;
   createdAt: string;
+  crawlLogId?: string;
 }
 
 export interface SmtpSettings {
