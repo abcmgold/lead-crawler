@@ -477,7 +477,7 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-primary to-pink-600 text-primary-foreground font-semibold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_25px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-sans h-auto"
+                  className="w-full bg-gradient-to-r from-primary to-primary-to text-primary-foreground font-semibold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_25px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-sans h-auto"
                   disabled={isSending}
                 >
                   {isSending ? (
@@ -558,7 +558,7 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                 <div className="flex gap-3 pt-2">
                   <Button
                     type="submit"
-                    className="flex-1 bg-gradient-to-r from-primary to-pink-600 text-primary-foreground font-semibold py-3 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_20px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed h-auto"
+                    className="flex-1 bg-gradient-to-r from-primary to-primary-to text-primary-foreground font-semibold py-3 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_20px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed h-auto"
                     disabled={isSavingTemplate}
                   >
                     {isSavingTemplate ? (
@@ -597,7 +597,7 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                 </div>
                 <Button
                   onClick={handleCreateNewClick}
-                  className="bg-gradient-to-r from-primary to-pink-600 text-primary-foreground font-semibold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer text-xs shadow-md shadow-primary/20 hover:opacity-90 duration-300 h-auto"
+                  className="bg-gradient-to-r from-primary to-primary-to text-primary-foreground font-semibold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer text-xs shadow-md shadow-primary/20 hover:opacity-90 duration-300 h-auto"
                 >
                   <Plus className="w-4 h-4" />
                   Tạo mẫu mới
@@ -744,7 +744,7 @@ const CampaignLogs = React.memo(function CampaignLogs({
             </div>
             <div className="w-full bg-slate-900/60 h-2.5 rounded-full overflow-hidden border border-white/5">
               <div
-                className="h-full bg-gradient-to-r from-primary to-pink-500 rounded-full transition-all duration-300"
+                className="h-full bg-gradient-to-r from-primary to-primary-to rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>

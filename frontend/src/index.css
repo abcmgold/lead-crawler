@@ -313,9 +313,7 @@
   --radius-sm: calc(var(--radius) - 4px);
 
   /* Theme color overrides for hardcoded gradients */
-  --color-pink-600: var(--primary-gradient-to);
-  --color-pink-500: var(--primary-gradient-to);
-  --color-purple-500: var(--secondary);
+  --color-primary-to: var(--primary-gradient-to);
 
   /* Theme utilities mapping */
   --color-bgPrimary: var(--background);

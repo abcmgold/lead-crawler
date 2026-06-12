@@ -324,7 +324,7 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
             </div>
             <Button
               type="submit"
-              className="bg-gradient-to-r from-primary to-pink-600 text-primary-foreground font-semibold px-8 py-4 rounded-xl flex items-center justify-center gap-3 shadow-[0_4px_20px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_25px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-base shrink-0 font-sans h-auto"
+              className="bg-gradient-to-r from-primary to-primary-to text-primary-foreground font-semibold px-8 py-4 rounded-xl flex items-center justify-center gap-3 shadow-[0_4px_20px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_25px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-base shrink-0 font-sans h-auto"
               disabled={isCrawling}
             >
               {isCrawling ? (
@@ -473,7 +473,7 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
                               isActive={page === safeModalPage}
                               onClick={(e) => { e.preventDefault(); goToModalPage(page); }}
                               className={`w-8 h-8 text-xs rounded-lg border-0 transition-all ${page === safeModalPage
-                                ? 'bg-gradient-to-r from-primary to-pink-600 text-white shadow-md shadow-primary/20 font-bold border-0'
+                                ? 'bg-gradient-to-r from-primary to-primary-to text-white shadow-md shadow-primary/20 font-bold border-0'
                                 : 'text-slate-400 hover:text-white hover:bg-white/5'
                                 }`}
                             >
@@ -573,7 +573,7 @@ const ProgressCard = React.memo(function ProgressCard({
 
       <div className="w-full bg-slate-950/60 h-2.5 rounded-full overflow-hidden border border-white/5">
         <div
-          className="h-full bg-gradient-to-r from-primary via-pink-500 to-purple-500 rounded-full transition-all duration-300"
+          className="h-full bg-gradient-to-r from-primary via-primary-to to-secondary rounded-full transition-all duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -736,7 +736,7 @@ const HistoryCard = React.memo(function HistoryCard({
                         onClick={(e) => { e.preventDefault(); onPageChange(page); }}
                         className={`w-8 h-8 text-xs rounded-lg border-0 transition-all ${
                           page === currentPage
-                            ? 'bg-gradient-to-r from-primary to-pink-600 text-white shadow-md shadow-primary/20 font-bold border-0'
+                            ? 'bg-gradient-to-r from-primary to-primary-to text-white shadow-md shadow-primary/20 font-bold border-0'
                             : 'text-slate-400 hover:text-white hover:bg-white/5'
                         }`}
                       >

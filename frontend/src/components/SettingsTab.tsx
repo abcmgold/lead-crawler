@@ -209,7 +209,7 @@ function SmtpSettingsForm({ smtpSettings, onSettingsUpdated, showToast }: Settin
 
         <Button
           type="submit"
-          className="w-full md:w-auto bg-gradient-to-r from-primary to-pink-600 text-primary-foreground font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_25px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-sans h-auto"
+          className="w-full md:w-auto bg-gradient-to-r from-primary to-primary-to text-primary-foreground font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_25px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-sans h-auto"
           disabled={isSaving}
         >
           {isSaving ? (
@@ -324,7 +324,7 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
 
         <Button
           type="submit"
-          className="w-full md:w-auto bg-gradient-to-r from-primary to-pink-600 text-primary-foreground font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_25px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-sans h-auto"
+          className="w-full md:w-auto bg-gradient-to-r from-primary to-primary-to text-primary-foreground font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_25px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-sans h-auto"
           disabled={isSaving}
         >
           {isSaving ? (

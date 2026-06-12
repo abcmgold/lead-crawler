@@ -21,7 +21,7 @@ export default function StatsBar({ leads, selectedCount }: StatsBarProps) {
       </div>
 
       <div className="glass-panel p-3 sm:p-5 rounded-2xl shadow-lg relative overflow-hidden flex items-center gap-3 sm:gap-4">
-        <div className="p-2 sm:p-3 bg-pink-500/10 rounded-xl text-pink-400 border border-pink-500/15 shrink-0">
+        <div className="p-2 sm:p-3 bg-primary-to/10 rounded-xl text-primary-to border border-primary-to/15 shrink-0">
           <Users className="w-5 h-5 sm:w-6 sm:h-6" />
         </div>
         <div className="min-w-0">

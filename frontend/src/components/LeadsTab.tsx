@@ -435,7 +435,7 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
                         isActive={page === safePage}
                         onClick={(e) => { e.preventDefault(); goToPage(page); }}
                         className={`w-8 h-8 text-xs rounded-lg border-0 transition-all ${page === safePage
-                          ? 'bg-gradient-to-r from-primary to-pink-600 text-white shadow-md shadow-primary/20 font-bold border-0'
+                          ? 'bg-gradient-to-r from-primary to-primary-to text-white shadow-md shadow-primary/20 font-bold border-0'
                           : 'text-slate-400 hover:text-white hover:bg-white/5'
                           }`}
                       >

@@ -5,8 +5,11 @@ const { logSystem } = require('../utils/logger');
 const dbRepo = require('../repositories/db.repository');
 const leadService = require('./lead.service');
 
+// Target number of unique URLs to collect per crawl run
+const MAX_URLS = 250;
+
 // If the search engines return fewer than this many unique URLs, retry the search once more
-const MIN_URLS_BEFORE_RETRY = 50;
+const MIN_URLS_BEFORE_RETRY = 80;
 
 // Helper to parse DuckDuckGo search result links
 // `stats.raw` counts every candidate result link seen (before exact-URL dedup)
@@ -79,8 +82,8 @@ async function duckduckgoSearch(query) {
     parseDdgResults($, urls, stats);
 
     // Fetch subsequent pages (each gives 30 results) using POST requests mimicking the "Next" page form
-    for (let page = 1; page <= 4; page++) {
-      if (urls.length >= 100) break;
+    for (let page = 1; page <= 9; page++) {
+      if (urls.length >= MAX_URLS) break;
 
       const nextForm = $('form[action="/html/"]').last();
       if (!nextForm.length) break;
@@ -116,7 +119,7 @@ async function duckduckgoSearch(query) {
     }
 
     logSystem(`DDG: ${stats.raw} link thô tìm thấy, ${urls.length} URL duy nhất`, 'INFO');
-    return urls.slice(0, 100);
+    return urls.slice(0, MAX_URLS);
   } catch (err) {
     logSystem(`DuckDuckGo search không khả dụng (bị chặn hoặc hết hạn): ${err.message}`, 'WARNING');
     return [];
@@ -131,8 +134,8 @@ async function bingSearch(query) {
   let nextUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
   let cookieHeader = '';
 
-  for (let pageNum = 1; pageNum <= 10; pageNum++) {
-    if (!nextUrl || urls.length >= 100) break;
+  for (let pageNum = 1; pageNum <= 20; pageNum++) {
+    if (!nextUrl || urls.length >= MAX_URLS) break;
 
     try {
       const response = await axios.get(nextUrl, {
@@ -205,7 +208,7 @@ async function bingSearch(query) {
   }
 
   logSystem(`Bing: ${rawCount} link thô tìm thấy, ${urls.length} URL duy nhất`, 'INFO');
-  return urls.slice(0, 100);
+  return urls.slice(0, MAX_URLS);
 }
 
 function decodeCfEmail(encodedString) {
@@ -401,7 +404,7 @@ async function performCrawl(keyword) {
       for (const url of newUrls) {
         try {
           new URL(url);
-          if (!urls.includes(url) && urls.length < 100) {
+          if (!urls.includes(url) && urls.length < MAX_URLS) {
             urls.push(url);
           }
         } catch (e) { }
@@ -413,8 +416,8 @@ async function performCrawl(keyword) {
     logSystem(`Bing trả về ${bingUrls.length} URL`, 'INFO');
     addUrls(bingUrls);
 
-    // 2. If we need more, try DuckDuckGo (up to 4 pages)
-    if (urls.length < 100) {
+    // 2. If we need more, try DuckDuckGo (up to 9 pages)
+    if (urls.length < MAX_URLS) {
       logSystem(`Sau Bing: ${urls.length} kết quả. Tiếp tục tìm thêm từ DuckDuckGo...`, 'INFO');
       const ddgUrls = await duckduckgoSearch(keyword);
       logSystem(`DuckDuckGo trả về ${ddgUrls.length} URL`, 'INFO');
@@ -430,7 +433,7 @@ async function performCrawl(keyword) {
       logSystem(`Bing (lần 2) trả về ${bingRetryUrls.length} URL`, 'INFO');
       addUrls(bingRetryUrls);
 
-      if (urls.length < 100) {
+      if (urls.length < MAX_URLS) {
         const ddgRetryUrls = await duckduckgoSearch(keyword);
         logSystem(`DuckDuckGo (lần 2) trả về ${ddgRetryUrls.length} URL`, 'INFO');
         addUrls(ddgRetryUrls);
