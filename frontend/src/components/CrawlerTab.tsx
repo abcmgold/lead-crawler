@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Search, Loader2, Clock, Trash2, Sparkles, X, ExternalLink, ChevronFirst, ChevronLast } from 'lucide-react';
 import { HistoryItem, Lead } from './types';
 import { apiFetch } from '@/lib/api';
+import { Button } from '@/components/ui/button';
 import ConfirmDialog from './ConfirmDialog';
 import {
   Pagination,
@@ -269,9 +270,9 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
                 disabled={isCrawling}
               />
             </div>
-            <button
+            <Button
               type="submit"
-              className="bg-gradient-to-r from-primary to-pink-600 text-primary-foreground font-semibold px-8 py-4 rounded-xl flex items-center justify-center gap-3 shadow-[0_4px_20px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_25px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-base shrink-0 font-sans"
+              className="bg-gradient-to-r from-primary to-pink-600 text-primary-foreground font-semibold px-8 py-4 rounded-xl flex items-center justify-center gap-3 shadow-[0_4px_20px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_25px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-base shrink-0 font-sans h-auto"
               disabled={isCrawling}
             >
               {isCrawling ? (
@@ -285,7 +286,7 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
                   Bắt đầu quét
                 </>
               )}
-            </button>
+            </Button>
           </form>
         </div>
       </div>
@@ -332,12 +333,14 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
                   Thời gian: {new Date(selectedCrawlLog.timestamp).toLocaleString('vi-VN')} | Tìm thấy {matchingLeads.length} leads
                 </p>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setShowLogLeadsModal(false)}
                 className="text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-xl transition-all cursor-pointer"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </Button>
             </div>
 
             {/* Modal Content */}
@@ -440,12 +443,13 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
                   </Pagination>
                 )}
 
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => setShowLogLeadsModal(false)}
-                  className="bg-slate-800 hover:bg-slate-700 border border-white/10 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all cursor-pointer font-sans"
+                  className="bg-slate-800 hover:bg-slate-700 border border-white/10 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all cursor-pointer font-sans h-auto"
                 >
                   Đóng
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -533,13 +537,14 @@ const HistoryCard = React.memo(function HistoryCard({
           Lịch sử quét
         </h3>
         {history.length > 0 && (
-          <button
+          <Button
+            variant="destructive"
             onClick={onClearHistoryClick}
-            className="text-xs text-rose-400 border border-rose-500/20 hover:bg-rose-500/10 px-3.5 py-2 rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer font-medium self-start sm:self-auto"
+            className="text-xs text-rose-400 border border-rose-500/20 hover:bg-rose-500/10 px-3.5 py-2 rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer font-medium self-start sm:self-auto h-auto"
           >
             <Trash2 className="w-4 h-4" />
             Xóa lịch sử
-          </button>
+          </Button>
         )}
       </div>
 

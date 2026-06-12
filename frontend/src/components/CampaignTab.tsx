@@ -6,6 +6,7 @@ import RichTextEditor from './RichTextEditor';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import ConfirmDialog from './ConfirmDialog';
 import { CustomSelect } from './ui/select';
+import { Button } from './ui/button';
 
 interface CampaignTabProps {
   allLeads: Lead[];
@@ -427,13 +428,14 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                   <div className="flex justify-between items-center text-xs font-semibold text-slate-400">
                     <span>Chọn người nhận theo lần cào (Quét)</span>
                     {selectedLeads.length > 0 && (
-                      <button
+                      <Button
                         type="button"
+                        variant="link"
                         onClick={() => onSelectLeads(new Set())}
-                        className="text-rose-400 hover:text-rose-300 transition-colors"
+                        className="text-rose-400 hover:text-rose-300 transition-colors h-auto p-0"
                       >
                         Bỏ chọn tất cả ({selectedLeads.length})
-                      </button>
+                      </Button>
                     )}
                   </div>
                   <div className="flex gap-2 mt-1">
@@ -456,14 +458,14 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                         };
                       })}
                     />
-                    <button
+                    <Button
                       type="button"
                       onClick={() => handleSelectCrawlLog(selectedLogId)}
                       disabled={!selectedLogId}
-                      className="bg-primary hover:opacity-90 text-primary-foreground font-semibold px-4 py-3 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0 cursor-pointer"
+                      className="bg-primary hover:opacity-90 text-primary-foreground font-semibold px-4 py-3 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0 cursor-pointer h-auto"
                     >
                       Thêm vào danh sách
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -473,9 +475,9 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                   isSending={isSending}
                 />
 
-                <button
+                <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-primary to-pink-600 text-primary-foreground font-semibold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_25px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-sans"
+                  className="w-full bg-gradient-to-r from-primary to-pink-600 text-primary-foreground font-semibold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_25px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-sans h-auto"
                   disabled={isSending}
                 >
                   {isSending ? (
@@ -489,7 +491,7 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                       Gửi Email Hàng Loạt
                     </>
                   )}
-                </button>
+                </Button>
               </form>
             </div>
 
@@ -554,9 +556,9 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                 </div>
 
                 <div className="flex gap-3 pt-2">
-                  <button
+                  <Button
                     type="submit"
-                    className="flex-1 bg-gradient-to-r from-primary to-pink-600 text-primary-foreground font-semibold py-3 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_20px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 bg-gradient-to-r from-primary to-pink-600 text-primary-foreground font-semibold py-3 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_20px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed h-auto"
                     disabled={isSavingTemplate}
                   >
                     {isSavingTemplate ? (
@@ -567,15 +569,16 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                     ) : (
                       'Lưu mẫu'
                     )}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={handleCancelEdit}
-                    className="flex-1 bg-slate-900 border border-white/10 text-slate-300 font-semibold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-800 transition-all cursor-pointer"
+                    className="flex-1 bg-slate-900 border border-white/10 text-slate-300 font-semibold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-800 transition-all cursor-pointer h-auto"
                     disabled={isSavingTemplate}
                   >
                     Hủy bỏ
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>
@@ -592,13 +595,13 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                     Tạo và quản lý các mẫu thư HTML của bạn. Chọn chúng nhanh khi soạn chiến dịch để tiết kiệm thời gian.
                   </p>
                 </div>
-                <button
+                <Button
                   onClick={handleCreateNewClick}
-                  className="bg-gradient-to-r from-primary to-pink-600 text-primary-foreground font-semibold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer text-xs shadow-md shadow-primary/20 hover:opacity-90 duration-300"
+                  className="bg-gradient-to-r from-primary to-pink-600 text-primary-foreground font-semibold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer text-xs shadow-md shadow-primary/20 hover:opacity-90 duration-300 h-auto"
                 >
                   <Plus className="w-4 h-4" />
                   Tạo mẫu mới
-                </button>
+                </Button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -621,20 +624,22 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                       </div>
 
                       <div className="flex gap-2.5 border-t border-white/5 pt-3">
-                        <button
+                        <Button
+                          variant="outline"
                           onClick={() => handleEditClick(tpl)}
-                          className="flex-1 bg-slate-900/60 hover:bg-slate-900 border border-white/5 hover:border-white/10 text-slate-300 font-semibold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                          className="flex-1 bg-slate-900/60 hover:bg-slate-900 border border-white/5 hover:border-white/10 text-slate-300 font-semibold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer h-auto"
                         >
                           <Edit className="w-3.5 h-3.5" />
                           Sửa mẫu
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="destructive"
                           onClick={() => requestDeleteTemplate(tpl.id)}
-                          className="flex-1 bg-rose-950/20 hover:bg-rose-950/40 border border-rose-500/10 hover:border-rose-500/20 text-rose-400 font-semibold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                          className="flex-1 bg-rose-950/20 hover:bg-rose-950/40 border border-rose-500/10 hover:border-rose-500/20 text-rose-400 font-semibold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer h-auto"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           Xóa
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))
@@ -687,14 +692,16 @@ const SelectedLeadsList = React.memo(function SelectedLeadsList({
               <span className="truncate max-w-[85%] text-slate-300">
                 <strong className="text-slate-200">{lead.name || 'Site'}</strong> - <code className="text-primary font-mono">{lead.email}</code>
               </span>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => onRemoveLead(lead.id)}
-                className="text-rose-400 hover:text-white p-1 hover:bg-rose-500/10 rounded-lg transition-all cursor-pointer"
+                className="text-rose-400 hover:text-white p-1 hover:bg-rose-500/10 rounded-lg transition-all cursor-pointer h-7 w-7"
                 disabled={isSending}
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
           ))
         )}

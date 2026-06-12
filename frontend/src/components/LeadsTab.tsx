@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/pagination';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { CustomSelect } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 
 interface LeadsTabProps {
   leads: Lead[];
@@ -308,20 +309,22 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
 
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 sm:justify-end shrink-0">
-          <button
+          <Button
+            variant="outline"
             onClick={handleExportCSV}
-            className="bg-slate-900/60 hover:bg-slate-900 border border-white/10 hover:border-white/20 text-slate-200 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer font-sans"
+            className="bg-slate-900/60 hover:bg-slate-900 border border-white/10 hover:border-white/20 text-slate-200 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer font-sans h-auto"
           >
             <Download className="w-4 h-4" />
             Xuất CSV
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="destructive"
             onClick={onClearAll}
-            className="text-rose-400 border border-rose-500/20 hover:bg-rose-500/10 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer font-sans"
+            className="text-rose-400 border border-rose-500/20 hover:bg-rose-500/10 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer font-sans h-auto"
           >
             <Trash2 className="w-4 h-4" />
             Xóa tất cả
-          </button>
+          </Button>
         </div>
       </div>
 
