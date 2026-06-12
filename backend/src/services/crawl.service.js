@@ -5,11 +5,52 @@ const { logSystem } = require('../utils/logger');
 const dbRepo = require('../repositories/db.repository');
 const leadService = require('./lead.service');
 
-// Helper to search DuckDuckGo html as a fallback
+// Helper to parse DuckDuckGo search result links
+function parseDdgResults($, urls) {
+  $('a').each((i, el) => {
+    let href = $(el).attr('href');
+    if (!href) return;
+
+    // Extract real URL from DDG redirect parameters
+    if (href.startsWith('/l/?') || href.includes('uddg=')) {
+      try {
+        const parsedUrl = new URL(href, 'https://html.duckduckgo.com');
+        const uddg = parsedUrl.searchParams.get('uddg');
+        if (uddg) href = uddg;
+      } catch (e) {}
+    }
+
+    if (href && href.startsWith('http') && !href.includes('duckduckgo.com') && !href.includes('google.com') && !href.includes('youtube.com') && !href.includes('facebook.com') && !href.includes('twitter.com') && !href.includes('instagram.com')) {
+      try {
+        const parsed = new URL(href);
+        if (!urls.some(u => new URL(u).hostname === parsed.hostname)) {
+          urls.push(href);
+        }
+      } catch (e) {}
+    }
+  });
+
+  // Fallback: parse result__url text if standard href scraping missed it
+  $('.result__url').each((i, el) => {
+    const targetUrl = $(el).text().trim();
+    if (targetUrl && !targetUrl.includes('duckduckgo.com') && !targetUrl.includes('google.com') && !targetUrl.includes('youtube.com') && !targetUrl.includes('facebook.com') && !targetUrl.includes('twitter.com') && !targetUrl.includes('instagram.com')) {
+      try {
+        const formattedUrl = targetUrl.startsWith('http') ? targetUrl : `https://${targetUrl}`;
+        const parsed = new URL(formattedUrl);
+        if (!urls.some(u => new URL(u).hostname === parsed.hostname)) {
+          urls.push(formattedUrl);
+        }
+      } catch (e) {}
+    }
+  });
+}
+
+// Helper to search DuckDuckGo html with multi-page pagination support
 async function duckduckgoSearch(query) {
-  const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+  const urls = [];
   try {
-    const response = await axios.get(url, {
+    const firstUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+    let response = await axios.get(firstUrl, {
       headers: {
         'User-Agent': getRandomUserAgent(),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
@@ -22,49 +63,48 @@ async function duckduckgoSearch(query) {
         'Upgrade-Insecure-Requests': '1'
       },
       timeout: 10000,
-      validateStatus: (status) => status === 200 // Ensure we treat 202 Accepted (verification) as an error
+      validateStatus: (status) => status === 200
     });
 
-    const $ = cheerio.load(response.data);
-    const urls = [];
+    let $ = cheerio.load(response.data);
+    parseDdgResults($, urls);
 
-    // Parse search results links using direct class and redirect query params
-    $('a').each((i, el) => {
-      let href = $(el).attr('href');
-      if (!href) return;
+    // Fetch subsequent pages (each gives 30 results) using POST requests mimicking the "Next" page form
+    for (let page = 1; page <= 4; page++) {
+      if (urls.length >= 100) break;
 
-      // Extract real URL from DDG redirect parameters
-      if (href.startsWith('/l/?') || href.includes('uddg=')) {
-        try {
-          const parsedUrl = new URL(href, 'https://html.duckduckgo.com');
-          const uddg = parsedUrl.searchParams.get('uddg');
-          if (uddg) href = uddg;
-        } catch (e) {}
+      const nextForm = $('form[action="/html/"]').last();
+      if (!nextForm.length) break;
+
+      const postData = {};
+      nextForm.find('input[type="hidden"]').each((i, el) => {
+        const name = $(el).attr('name');
+        const value = $(el).attr('value');
+        if (name) postData[name] = value;
+      });
+
+      // Delay between queries to avoid getting rate limited
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      try {
+        response = await axios.post('https://html.duckduckgo.com/html/', new URLSearchParams(postData).toString(), {
+          headers: {
+            'User-Agent': getRandomUserAgent(),
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Referer': 'https://html.duckduckgo.com/',
+            'Origin': 'https://html.duckduckgo.com'
+          },
+          timeout: 10000
+        });
+
+        $ = cheerio.load(response.data);
+        parseDdgResults($, urls);
+      } catch (err) {
+        logSystem(`Lỗi tải trang DDG tiếp theo: ${err.message}`, 'WARNING');
+        break;
       }
-
-      if (href && href.startsWith('http') && !href.includes('duckduckgo.com') && !href.includes('google.com') && !href.includes('youtube.com') && !href.includes('facebook.com') && !href.includes('twitter.com') && !href.includes('instagram.com')) {
-        try {
-          const parsed = new URL(href);
-          if (!urls.some(u => new URL(u).hostname === parsed.hostname)) {
-            urls.push(href);
-          }
-        } catch (e) {}
-      }
-    });
-
-    // Fallback: parse result__url text if standard href scraping missed it
-    $('.result__url').each((i, el) => {
-      const targetUrl = $(el).text().trim();
-      if (targetUrl && !targetUrl.includes('duckduckgo.com') && !targetUrl.includes('google.com') && !targetUrl.includes('youtube.com') && !targetUrl.includes('facebook.com') && !targetUrl.includes('twitter.com') && !targetUrl.includes('instagram.com')) {
-        try {
-          const formattedUrl = targetUrl.startsWith('http') ? targetUrl : `https://${targetUrl}`;
-          const parsed = new URL(formattedUrl);
-          if (!urls.some(u => new URL(u).hostname === parsed.hostname)) {
-            urls.push(formattedUrl);
-          }
-        } catch (e) {}
-      }
-    });
+    }
 
     return urls.slice(0, 100);
   } catch (err) {
@@ -389,22 +429,38 @@ async function performCrawl(keyword) {
     logSystem(`Phát hiện đầu vào là URL/Email. Crawl trực tiếp: ${directUrl}`, 'INFO');
     urls = [directUrl];
   } else {
-    // 1. Try Google Search
-    urls = await googleSearch(keyword);
+    const uniqueDomains = new Set();
+    const addUrls = (newUrls) => {
+      for (const url of newUrls) {
+        try {
+          const parsed = new URL(url);
+          if (!uniqueDomains.has(parsed.hostname) && urls.length < 100) {
+            uniqueDomains.add(parsed.hostname);
+            urls.push(url);
+          }
+        } catch (e) {}
+      }
+    };
 
-    // 2. Fallback to DuckDuckGo
-    if (urls.length === 0) {
-      logSystem(`Google Search trả về 0 kết quả. Thử qua DuckDuckGo...`, 'INFO');
-      urls = await duckduckgoSearch(keyword);
+    // 1. Try Google Search first
+    const googleUrls = await googleSearch(keyword);
+    addUrls(googleUrls);
+
+    // 2. If we need more, try DuckDuckGo (now support up to 4 pages)
+    if (urls.length < 100) {
+      logSystem(`Google chỉ trả về ${urls.length} kết quả. Tiếp tục tìm thêm từ DuckDuckGo...`, 'INFO');
+      const ddgUrls = await duckduckgoSearch(keyword);
+      addUrls(ddgUrls);
     }
 
-    // 3. Fallback to Bing Search
-    if (urls.length === 0) {
-      logSystem(`DuckDuckGo trả về 0 kết quả. Thử qua Bing...`, 'INFO');
-      urls = await bingSearch(keyword);
+    // 3. If we still need more, try Bing (up to 10 pages)
+    if (urls.length < 100) {
+      logSystem(`Google + DDG chỉ trả về ${urls.length} kết quả. Tiếp tục tìm thêm từ Bing...`, 'INFO');
+      const bingUrls = await bingSearch(keyword);
+      addUrls(bingUrls);
     }
 
-    logSystem(`Kết quả tìm kiếm cho "${keyword}" tổng cộng trả về ${urls.length} URLs`, 'INFO');
+    logSystem(`Tổng số website thu thập được cho "${keyword}": ${urls.length} URLs (sau khi lọc trùng tên miền)`, 'INFO');
   }
 
   if (urls.length === 0) {
