@@ -2,13 +2,13 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Table({ className, wrapperClassName, scrollableBody, ...props }: React.ComponentProps<"table"> & { wrapperClassName?: string; scrollableBody?: boolean }) {
+function Table({ className, wrapperClassName, scrollableBody, minBodyWidth, style, ...props }: React.ComponentProps<"table"> & { wrapperClassName?: string; scrollableBody?: boolean; minBodyWidth?: string }) {
   return (
     <div
       data-slot="table-container"
       className={cn(
         scrollableBody
-          ? "relative w-full flex flex-col min-h-0 overflow-hidden"
+          ? "relative w-full flex flex-col min-h-0 overflow-x-auto overflow-y-hidden overscroll-x-contain"
           : "relative w-full overflow-x-auto",
         wrapperClassName
       )}
@@ -20,6 +20,7 @@ function Table({ className, wrapperClassName, scrollableBody, ...props }: React.
           scrollableBody && "flex flex-col min-h-0 flex-1",
           className
         )}
+        style={scrollableBody ? { minWidth: minBodyWidth, ...style } : style}
         {...props}
       />
     </div>

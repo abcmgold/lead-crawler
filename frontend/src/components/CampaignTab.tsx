@@ -460,9 +460,11 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                     />
                     <Button
                       type="button"
+                      variant="default"
+                      size="sm-xl"
                       onClick={() => handleSelectCrawlLog(selectedLogId)}
                       disabled={!selectedLogId}
-                      className="bg-primary hover:opacity-90 text-primary-foreground font-semibold px-4 py-3 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0 cursor-pointer h-auto"
+                      className="shrink-0 h-auto"
                     >
                       Thêm vào danh sách
                     </Button>
@@ -477,7 +479,9 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-primary to-primary-to text-primary-foreground font-semibold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_25px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-sans h-auto"
+                  variant="gradient"
+                  className="w-full"
+                  size="sm-xl"
                   disabled={isSending}
                 >
                   {isSending ? (
@@ -558,7 +562,9 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                 <div className="flex gap-3 pt-2">
                   <Button
                     type="submit"
-                    className="flex-1 bg-gradient-to-r from-primary to-primary-to text-primary-foreground font-semibold py-3 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_20px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed h-auto"
+                    variant="gradient"
+                    size="md-xl"
+                    className="flex-1 h-auto"
                     disabled={isSavingTemplate}
                   >
                     {isSavingTemplate ? (
@@ -573,8 +579,9 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                   <Button
                     type="button"
                     variant="outline"
+                    size="md-xl"
                     onClick={handleCancelEdit}
-                    className="flex-1 bg-slate-900 border border-white/10 text-slate-300 font-semibold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-800 transition-all cursor-pointer h-auto"
+                    className="flex-1 h-auto"
                     disabled={isSavingTemplate}
                   >
                     Hủy bỏ
@@ -597,7 +604,9 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                 </div>
                 <Button
                   onClick={handleCreateNewClick}
-                  className="bg-gradient-to-r from-primary to-primary-to text-primary-foreground font-semibold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer text-xs shadow-md shadow-primary/20 hover:opacity-90 duration-300 h-auto"
+                  variant="gradient"
+                  size="sm-xl"
+                  className="h-auto"
                 >
                   <Plus className="w-4 h-4" />
                   Tạo mẫu mới
@@ -626,16 +635,18 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                       <div className="flex gap-2.5 border-t border-white/5 pt-3">
                         <Button
                           variant="outline"
+                          size="lg"
                           onClick={() => handleEditClick(tpl)}
-                          className="flex-1 bg-slate-900/60 hover:bg-slate-900 border border-white/5 hover:border-white/10 text-slate-300 font-semibold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer h-auto"
+                          className="flex-1"
                         >
                           <Edit className="w-3.5 h-3.5" />
                           Sửa mẫu
                         </Button>
                         <Button
                           variant="destructive"
+                          size="lg"
                           onClick={() => requestDeleteTemplate(tpl.id)}
-                          className="flex-1 bg-rose-950/20 hover:bg-rose-950/40 border border-rose-500/10 hover:border-rose-500/20 text-rose-400 font-semibold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer h-auto"
+                          className="flex-1"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           Xóa
@@ -695,9 +706,9 @@ const SelectedLeadsList = React.memo(function SelectedLeadsList({
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
+                size="icon-sm"
                 onClick={() => onRemoveLead(lead.id)}
-                className="text-rose-400 hover:text-white p-1 hover:bg-rose-500/10 rounded-lg transition-all cursor-pointer h-7 w-7"
+                className="text-rose-400 hover:text-white hover:bg-rose-500/10"
                 disabled={isSending}
               >
                 <X className="w-4 h-4" />

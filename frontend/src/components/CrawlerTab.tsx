@@ -242,7 +242,9 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
             </div>
             <Button
               type="submit"
-              className="bg-gradient-to-r from-primary to-primary-to text-primary-foreground font-semibold px-8 py-4 rounded-xl flex items-center justify-center gap-3 shadow-[0_4px_20px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_25px_rgba(236,72,153,0.45)] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-base shrink-0 font-sans h-auto"
+              variant="gradient"
+              size="xl"
+              className="shrink-0 h-auto"
               disabled={isCrawling}
             >
               {isCrawling ? (
@@ -419,8 +421,8 @@ const HistoryCard = React.memo(function HistoryCard({
         {history.length > 0 && (
           <Button
             variant="destructive"
+            size="lg"
             onClick={onClearHistoryClick}
-            className="text-xs text-rose-400 border border-rose-500/20 hover:bg-rose-500/10 px-3.5 py-2 rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer font-medium self-start sm:self-auto h-auto"
           >
             <Trash2 className="w-4 h-4" />
             Xóa lịch sử
@@ -468,10 +470,7 @@ const HistoryCard = React.memo(function HistoryCard({
           data={history}
           keyExtractor={(log) => log.id}
           onRowClick={(log) => onRowClick(log)}
-          rowClassName="border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
           emptyState="Chưa có lịch sử quét nào."
-          containerClassName="rounded-xl border border-white/5 overflow-hidden"
-          className="w-full text-sm text-left text-slate-300"
           pagination={{
             currentPage,
             totalPages,

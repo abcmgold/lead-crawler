@@ -89,7 +89,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <Button type="submit" className="w-full" size='lg' disabled={isSubmitting}>
+          <Button type="submit" variant='default' className="w-full" size='sm-xl' disabled={isSubmitting}>
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />

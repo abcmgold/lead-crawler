@@ -328,16 +328,17 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
         <div className="flex flex-col sm:flex-row gap-3 sm:justify-end shrink-0">
           <Button
             variant="outline"
+            size="md-xl"
             onClick={handleExportCSV}
-            className="bg-slate-900/60 hover:bg-slate-900 border border-white/10 hover:border-white/20 text-slate-200 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer font-sans h-auto"
+            className="h-auto"
           >
             <Download className="w-4 h-4" />
             Xuất CSV
           </Button>
           <Button
             variant="destructive"
+            size="md-xl"
             onClick={onClearAll}
-            className="text-rose-400 border border-rose-500/20 hover:bg-rose-500/10 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer font-sans h-auto"
           >
             <Trash2 className="w-4 h-4" />
             Xóa tất cả
@@ -346,134 +347,31 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
       </div>
 
       {/* Main Table */}
-      <div className="glass-panel rounded-2xl shadow-xl overflow-hidden border border-white/5">
-        <DataTable
-          columns={columns}
-          data={pagedLeads}
-          keyExtractor={(lead) => lead.id}
-          onRowClick={(lead) => handleSelectOne(lead.id, !selectedIds.has(lead.id))}
-          rowClassName={(lead) => {
-            const isSelected = selectedIds.has(lead.id);
-            return `border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer ${isSelected ? 'bg-primary/[0.03]' : ''}`;
-          }}
-          emptyState={totalLeadsCount === 0 ? 'Chưa có leads nào. Hãy quét từ khóa ở tab cào.' : 'Không tìm thấy kết quả phù hợp.'}
-          containerClassName="relative w-full overflow-x-auto"
-          className="w-full text-sm text-left text-slate-300 border-collapse"
-        />
-
-        {/* Pagination Footer */}
-        <div className="bg-slate-900/30 border-t border-white/5 px-4 py-4 flex flex-col lg:flex-row items-center justify-between gap-4">
-          {/* Info + page size */}
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-slate-400 font-mono">
-            <span>
-              {totalLeadsCount === 0 ? (
-                'Không có dữ liệu'
-              ) : (
-                <>
-                  <span className="text-white font-semibold">{startIndex + 1}–{Math.min(startIndex + pageSize, totalLeadsCount)}</span>
-                  {' / '}
-                  <span className="text-white font-semibold">{totalLeadsCount}</span>
-                  {' leads'}
-                  {totalLeadsCount !== leads.length && (
-                    <span className="text-slate-500"> (lọc từ {leads.length})</span>
-                  )}
-                </>
-              )}
-            </span>
-            <span className="text-primary font-semibold">Đã chọn: {selectedIds.size}</span>
-            {/* Page size selector */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-500">Hiển thị:</span>
-              <CustomSelect
-                value={String(pageSize)}
-                onValueChange={(val) => { setPageSize(Number(val)); setCurrentPage(1); }}
-                triggerClassName="bg-slate-950/60 border border-white/10 text-slate-300 rounded-lg px-2 py-1 text-xs font-mono w-16 h-7 focus:ring-0"
-                options={PAGE_SIZE_OPTIONS.map(n => ({
-                  value: String(n),
-                  label: String(n)
-                }))}
-                openDirection="up"
-              />
-            </div>
-          </div>
-
-          {/* Pagination controls */}
-          {totalPages > 1 && (
-            <Pagination className="w-auto mx-0 max-w-full overflow-x-auto scrollbar-none">
-              <PaginationContent className="gap-0.5">
-                {/* First page */}
-                <PaginationItem>
-                  <PaginationLink
-                    href="#"
-                    onClick={(e) => { e.preventDefault(); goToPage(1); }}
-                    aria-disabled={safePage === 1}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg border-0 transition-all text-slate-400 hover:text-white hover:bg-white/5 ${safePage === 1 ? 'opacity-30 pointer-events-none' : ''}`}
-                    aria-label="First page"
-                  >
-                    <ChevronFirst className="w-4 h-4" />
-                  </PaginationLink>
-                </PaginationItem>
-
-                <PaginationItem>
-                  <PaginationPrevious
-                    text="Trước"
-                    href="#"
-                    onClick={(e) => { e.preventDefault(); goToPage(safePage - 1); }}
-                    aria-disabled={safePage === 1}
-                    className={`text-xs h-8 rounded-lg border-0 text-slate-400 hover:text-white hover:bg-white/5 transition-all ${safePage === 1 ? 'opacity-30 pointer-events-none' : ''}`}
-                  />
-                </PaginationItem>
-
-                {getPageNumbers().map((page, idx) =>
-                  page === 'ellipsis' ? (
-                    <PaginationItem key={`ellipsis-${idx}`}>
-                      <PaginationEllipsis className="text-slate-500 w-8 h-8" />
-                    </PaginationItem>
-                  ) : (
-                    <PaginationItem key={page}>
-                      <PaginationLink
-                        href="#"
-                        isActive={page === safePage}
-                        onClick={(e) => { e.preventDefault(); goToPage(page); }}
-                        className={`w-8 h-8 text-xs rounded-lg border-0 transition-all ${page === safePage
-                          ? 'bg-gradient-to-r from-primary to-primary-to text-white shadow-md shadow-primary/20 font-bold border-0'
-                          : 'text-slate-400 hover:text-white hover:bg-white/5'
-                          }`}
-                      >
-                        {page}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )
-                )}
-
-                <PaginationItem>
-                  <PaginationNext
-                    text="Sau"
-                    href="#"
-                    onClick={(e) => { e.preventDefault(); goToPage(safePage + 1); }}
-                    aria-disabled={safePage === totalPages}
-                    className={`text-xs h-8 rounded-lg border-0 text-slate-400 hover:text-white hover:bg-white/5 transition-all ${safePage === totalPages ? 'opacity-30 pointer-events-none' : ''}`}
-                  />
-                </PaginationItem>
-
-                {/* Last page */}
-                <PaginationItem>
-                  <PaginationLink
-                    href="#"
-                    onClick={(e) => { e.preventDefault(); goToPage(totalPages); }}
-                    aria-disabled={safePage === totalPages}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg border-0 transition-all text-slate-400 hover:text-white hover:bg-white/5 ${safePage === totalPages ? 'opacity-30 pointer-events-none' : ''}`}
-                    aria-label="Last page"
-                  >
-                    <ChevronLast className="w-4 h-4" />
-                  </PaginationLink>
-                </PaginationItem>
-
-              </PaginationContent>
-            </Pagination>
-          )}
-        </div>
-      </div>
+      <DataTable
+        columns={columns}
+        data={pagedLeads}
+        keyExtractor={(lead) => lead.id}
+        onRowClick={(lead) => handleSelectOne(lead.id, !selectedIds.has(lead.id))}
+        rowClassName={(lead) => {
+          const isSelected = selectedIds.has(lead.id);
+          return `border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer ${isSelected ? 'bg-primary/[0.03]' : ''}`;
+        }}
+        emptyState={totalLeadsCount === 0 ? 'Chưa có leads nào. Hãy quét từ khóa ở tab cào.' : 'Không tìm thấy kết quả phù hợp.'}
+        containerClassName="relative w-full overflow-x-auto glass-panel rounded-2xl shadow-xl border border-white/5"
+        className="w-full text-sm text-left text-slate-300 border-collapse"
+        pagination={{
+          currentPage: safePage,
+          totalPages: totalPages,
+          totalCount: totalLeadsCount,
+          pageSize: pageSize,
+          onPageChange: goToPage,
+          itemLabel: "leads",
+          totalAllLeadsCount: leads.length,
+          selectedCount: selectedIds.size,
+          pageSizeOptions: PAGE_SIZE_OPTIONS,
+          onPageSizeChange: (size) => { setPageSize(size); setCurrentPage(1); }
+        }}
+      />
     </div>
   );
 }

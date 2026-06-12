@@ -1,6 +1,7 @@
 import * as React from "react"
 import { ChevronFirst, ChevronLast } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { CustomSelect } from "./select"
 import {
   Table,
   TableBody,
@@ -25,6 +26,8 @@ export interface Column<T> {
   accessor: (row: T, index: number) => React.ReactNode
   className?: string
   cellClassName?: string
+  /** Fixed column width in px. With scrollableBody, the table becomes at least the sum of all column widths and scrolls horizontally if that's wider than its container. */
+  width?: number
 }
 
 export function getPageNumbers(currentPage: number, totalPages: number): (number | "ellipsis")[] {
@@ -48,6 +51,14 @@ export interface DataTablePaginationProps {
   onPageChange: (page: number) => void
   /** Label for the counted items, e.g. "leads", "phiên quét". Defaults to "mục". */
   itemLabel?: string
+  /** Optional overall total count of records to compute "lọc từ X" dynamically */
+  totalAllLeadsCount?: number
+  /** Optional number of selected items, shows "Đã chọn: X" if provided */
+  selectedCount?: number
+  /** Optional page size options, shows page size dropdown if provided */
+  pageSizeOptions?: readonly number[] | number[]
+  /** Optional handler when page size is changed */
+  onPageSizeChange?: (pageSize: number) => void
 }
 
 interface DataTableProps<T> {
@@ -74,7 +85,7 @@ export function DataTable<T>({
   rowClassName,
   emptyState = "Không có dữ liệu.",
   className,
-  containerClassName = "rounded-xl border border-white/5 bg-slate-950/20 overflow-hidden",
+  containerClassName,
   wrapperClassName,
   scrollableBody = false,
   pagination,
@@ -85,9 +96,25 @@ export function DataTable<T>({
   const showPagination = pagination && (pagination.totalPages > 1 || pagination.totalCount > 0)
   const startIndex = pagination ? (pagination.currentPage - 1) * pagination.pageSize : 0
 
+  const finalContainerClassName = cn(
+    "rounded-xl border border-white/5 bg-slate-950/20 overflow-hidden",
+    scrollableBody && "flex flex-col flex-1 min-h-0",
+    containerClassName
+  )
+
+  const finalWrapperClassName = cn(
+    scrollableBody && "flex-1 min-h-0",
+    wrapperClassName
+  )
+
+  // Sum of explicit column widths drives the table's min-width so it keeps
+  // each column's exact size and scrolls horizontally once they no longer fit.
+  const totalColumnsWidth = columns.reduce((sum, column) => sum + (column.width ?? 0), 0)
+  const minBodyWidth = totalColumnsWidth > 0 ? `${totalColumnsWidth}px` : undefined
+
   return (
-    <div className={containerClassName}>
-      <Table className={className} wrapperClassName={wrapperClassName} scrollableBody={scrollableBody}>
+    <div className={finalContainerClassName}>
+      <Table className={className} wrapperClassName={finalWrapperClassName} scrollableBody={scrollableBody} minBodyWidth={scrollableBody ? minBodyWidth : undefined}>
         <TableHeader className={cn(
           "bg-slate-900/95 border-b border-white/5 [&_tr]:border-b-0",
           scrollableBody ? "block w-full shrink-0" : "sticky top-0 z-10"
@@ -97,6 +124,7 @@ export function DataTable<T>({
               <TableHead
                 key={column.id || idx}
                 className={column.className}
+                style={column.width ? { width: column.width, minWidth: column.width, maxWidth: column.width } : undefined}
               >
                 {column.header}
               </TableHead>
@@ -132,6 +160,7 @@ export function DataTable<T>({
                       <TableCell
                         key={column.id || colIdx}
                         className={column.cellClassName}
+                        style={column.width ? { width: column.width, minWidth: column.width, maxWidth: column.width } : undefined}
                       >
                         {isPrimitive ? (
                           <div className="truncate max-w-[180px] sm:max-w-[240px] block font-sans" title={String(content)}>
@@ -155,11 +184,38 @@ export function DataTable<T>({
           "px-4 py-3 bg-slate-950/20 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3",
           scrollableBody && "shrink-0"
         )}>
-          <div className="text-xs text-slate-400 font-mono">
+          <div className="text-xs text-slate-400 font-mono flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             {pagination.totalCount > 0 && (
-              <>
-                Hiển thị <span className="text-white font-semibold">{startIndex + 1}–{Math.min(startIndex + pagination.pageSize, pagination.totalCount)}</span> trong số <span className="text-white font-semibold">{pagination.totalCount}</span> {pagination.itemLabel ?? "mục"}
-              </>
+              <span>
+                Hiển thị <span className="text-white font-semibold">{startIndex + 1}–{Math.min(startIndex + pagination.pageSize, pagination.totalCount)}</span>
+                {' / '}
+                <span className="text-white font-semibold">{pagination.totalCount}</span>
+                {` ${pagination.itemLabel ?? "mục"}`}
+                {pagination.totalAllLeadsCount !== undefined && pagination.totalAllLeadsCount > 0 && pagination.totalCount < pagination.totalAllLeadsCount && (
+                  <span className="text-slate-500"> (lọc từ {pagination.totalAllLeadsCount})</span>
+                )}
+              </span>
+            )}
+            
+            {pagination.selectedCount !== undefined && (
+              <span className="text-primary font-semibold">Đã chọn: {pagination.selectedCount}</span>
+            )}
+
+            {pagination.pageSizeOptions && pagination.onPageSizeChange && (
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-slate-500 whitespace-nowrap">Hiển thị:</span>
+                <CustomSelect
+                  value={String(pagination.pageSize)}
+                  onValueChange={(val) => pagination.onPageSizeChange?.(Number(val))}
+                  triggerClassName="bg-slate-950/60 border border-white/10 text-slate-300 rounded-lg px-2 py-1 text-xs font-mono w-16 h-7 focus:ring-0"
+                  contentClassName="w-20"
+                  options={pagination.pageSizeOptions.map(n => ({
+                    value: String(n),
+                    label: String(n)
+                  }))}
+                  openDirection="up"
+                />
+              </div>
             )}
           </div>
 

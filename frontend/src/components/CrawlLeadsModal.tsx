@@ -36,7 +36,8 @@ export default function CrawlLeadsModal({
       header: "Doanh Nghiệp / Site",
       accessor: (lead) => lead.name,
       className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
-      cellClassName: "px-4 py-3 font-semibold text-slate-200 truncate max-w-[200px] font-sans",
+      cellClassName: "px-4 py-3 font-semibold text-slate-200 truncate font-sans",
+      width: 220,
     },
     {
       id: 'email',
@@ -51,6 +52,7 @@ export default function CrawlLeadsModal({
       ),
       className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
       cellClassName: "px-4 py-3",
+      width: 240,
     },
     {
       id: 'phone',
@@ -58,6 +60,7 @@ export default function CrawlLeadsModal({
       accessor: (lead) => lead.phone || '—',
       className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
       cellClassName: "px-4 py-3 text-slate-400 font-mono text-xs",
+      width: 140,
     },
     {
       id: 'website',
@@ -75,7 +78,8 @@ export default function CrawlLeadsModal({
         </a>
       ),
       className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
-      cellClassName: "px-4 py-3 max-w-[200px]",
+      cellClassName: "px-4 py-3",
+      width: 220,
     }
   ], []);
 
@@ -114,8 +118,6 @@ export default function CrawlLeadsModal({
           keyExtractor={(lead) => lead.id}
           emptyState="Không tìm thấy lead nào thuộc phiên cào này hoặc đã bị xóa."
           className="w-full text-sm text-left text-slate-300"
-          containerClassName="rounded-xl border border-white/5 bg-slate-950/20 overflow-hidden flex-1 flex flex-col min-h-0"
-          wrapperClassName="flex-1 min-h-0"
           scrollableBody
           pagination={{
             currentPage,
