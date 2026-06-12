@@ -5,6 +5,9 @@ const { logSystem } = require('../utils/logger');
 const dbRepo = require('../repositories/db.repository');
 const leadService = require('./lead.service');
 
+// If the search engines return fewer than this many unique URLs, retry the search once more
+const MIN_URLS_BEFORE_RETRY = 50;
+
 // Helper to parse DuckDuckGo search result links
 // `stats.raw` counts every candidate result link seen (before exact-URL dedup)
 function parseDdgResults($, urls, stats = { raw: 0 }) {
@@ -283,7 +286,9 @@ async function crawlWebsite(targetUrl) {
     const mainPageRes = await axios.get(targetUrl, {
       headers: { 'User-Agent': getRandomUserAgent() },
       timeout: 8000,
-      validateStatus: () => true
+      validateStatus: () => true,
+      // Keep the raw response body as a string even if it looks like JSON
+      transformResponse: (data) => data
     });
 
     if (mainPageRes.status !== 200) {
@@ -331,7 +336,8 @@ async function crawlWebsite(targetUrl) {
         const contactPageRes = await axios.get(contactLinks[0], {
           headers: { 'User-Agent': getRandomUserAgent() },
           timeout: 6000,
-          validateStatus: () => true
+          validateStatus: () => true,
+          transformResponse: (data) => data
         });
         if (contactPageRes.status === 200) {
           extractContacts(contactPageRes.data, info);
@@ -413,6 +419,22 @@ async function performCrawl(keyword) {
       const ddgUrls = await duckduckgoSearch(keyword);
       logSystem(`DuckDuckGo trả về ${ddgUrls.length} URL`, 'INFO');
       addUrls(ddgUrls);
+    }
+
+    // 3. If results are still too few (engines likely got rate-limited/blocked), retry once
+    if (urls.length < MIN_URLS_BEFORE_RETRY) {
+      logSystem(`Chỉ tìm được ${urls.length} URL (dưới ngưỡng ${MIN_URLS_BEFORE_RETRY}). Thử tìm lại lần 2...`, 'WARNING');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const bingRetryUrls = await bingSearch(keyword);
+      logSystem(`Bing (lần 2) trả về ${bingRetryUrls.length} URL`, 'INFO');
+      addUrls(bingRetryUrls);
+
+      if (urls.length < 100) {
+        const ddgRetryUrls = await duckduckgoSearch(keyword);
+        logSystem(`DuckDuckGo (lần 2) trả về ${ddgRetryUrls.length} URL`, 'INFO');
+        addUrls(ddgRetryUrls);
+      }
     }
 
     logSystem(`Tổng số website thu thập được cho "${keyword}": ${urls.length} URLs (sau khi lọc trùng URL giữa các engine)`, 'INFO');

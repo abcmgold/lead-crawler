@@ -167,7 +167,7 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
   }, [consoleLogs]);
 
   const addLog = (message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
-    const timestamp = new Date().toLocaleTimeString();
+    const timestamp = new Date().toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
     setConsoleLogs(prev => [...prev, { timestamp, message, type }]);
   };
 
@@ -390,7 +390,7 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
               <div>
                 <h3 className="text-lg font-bold text-white font-sans">Kết quả cào cho: "{selectedCrawlLog.keyword}"</h3>
                 <p className="text-xs text-zinc-400 mt-1 font-mono">
-                  Thời gian: {new Date(selectedCrawlLog.timestamp).toLocaleString('vi-VN')} | Tìm thấy {modalTotalCount} leads
+                  Thời gian: {new Date(selectedCrawlLog.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} | Tìm thấy {modalTotalCount} leads
                 </p>
               </div>
               <Button
@@ -654,7 +654,7 @@ const HistoryCard = React.memo(function HistoryCard({
             {
               id: 'timestamp',
               header: "Thời gian",
-              accessor: (log) => new Date(log.timestamp).toLocaleString('vi-VN'),
+              accessor: (log) => new Date(log.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
               className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
               cellClassName: "px-5 py-4 text-slate-400 font-mono",
             },
