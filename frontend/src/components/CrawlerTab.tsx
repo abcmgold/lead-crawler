@@ -129,15 +129,15 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
     }
   ], []);
 
-  const consoleEndRef = useRef<HTMLDivElement>(null);
+  const consoleContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadHistory();
   }, []);
 
   useEffect(() => {
-    if (consoleEndRef.current) {
-      consoleEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (consoleContainerRef.current) {
+      consoleContainerRef.current.scrollTop = consoleContainerRef.current.scrollHeight;
     }
   }, [consoleLogs]);
 
@@ -297,7 +297,7 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
         crawlStatus={crawlStatus}
         progress={progress}
         consoleLogs={consoleLogs}
-        consoleEndRef={consoleEndRef}
+        consoleContainerRef={consoleContainerRef}
       />
 
       {/* History Card */}
@@ -467,7 +467,7 @@ interface ProgressCardProps {
   crawlStatus: string;
   progress: number;
   consoleLogs: ConsoleLog[];
-  consoleEndRef: React.RefObject<HTMLDivElement | null>;
+  consoleContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const ProgressCard = React.memo(function ProgressCard({
@@ -475,7 +475,7 @@ const ProgressCard = React.memo(function ProgressCard({
   crawlStatus,
   progress,
   consoleLogs,
-  consoleEndRef
+  consoleContainerRef
 }: ProgressCardProps) {
   if (!showProgressCard) return null;
   return (
@@ -501,7 +501,10 @@ const ProgressCard = React.memo(function ProgressCard({
       </div>
 
       {/* Console Output */}
-      <div className="bg-slate-950/80 border border-white/5 rounded-xl p-4 h-48 sm:h-64 overflow-y-auto font-mono text-xs text-sky-400 space-y-1.5 scrollbar-thin">
+      <div 
+        ref={consoleContainerRef}
+        className="bg-slate-950/80 border border-white/5 rounded-xl p-4 h-48 sm:h-64 overflow-y-auto font-mono text-xs text-sky-400 space-y-1.5 scrollbar-thin"
+      >
         {consoleLogs.map((log, idx) => (
           <div key={idx} className={`leading-relaxed border-l-2 pl-2 ${log.type === 'success' ? 'text-emerald-400 border-emerald-500/40' :
               log.type === 'error' ? 'text-rose-400 border-rose-500/40' :
@@ -512,7 +515,6 @@ const ProgressCard = React.memo(function ProgressCard({
             {log.message}
           </div>
         ))}
-        <div ref={consoleEndRef} />
       </div>
     </div>
   );
