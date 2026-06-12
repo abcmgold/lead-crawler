@@ -172,7 +172,7 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
       id: 'email',
       header: "Email",
       accessor: (lead) => (
-        <code 
+        <code
           title={lead.email}
           className="text-primary font-mono text-xs select-all bg-primary/5 px-2 py-1 rounded border border-primary/10 block truncate max-w-[180px]"
         >

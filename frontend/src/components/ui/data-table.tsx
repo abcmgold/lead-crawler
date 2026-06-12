@@ -74,14 +74,24 @@ export function DataTable<T>({
                   onClick={onRowClick ? () => onRowClick(row, rowIdx) : undefined}
                   className={rowClass}
                 >
-                  {columns.map((column, colIdx) => (
-                    <TableCell
-                      key={column.id || colIdx}
-                      className={column.cellClassName}
-                    >
-                      {column.accessor(row, rowIdx)}
-                    </TableCell>
-                  ))}
+                  {columns.map((column, colIdx) => {
+                    const content = column.accessor(row, rowIdx)
+                    const isPrimitive = typeof content === "string" || typeof content === "number"
+                    return (
+                      <TableCell
+                        key={column.id || colIdx}
+                        className={column.cellClassName}
+                      >
+                        {isPrimitive ? (
+                          <div className="truncate max-w-[180px] sm:max-w-[240px] block font-sans" title={String(content)}>
+                            {content}
+                          </div>
+                        ) : (
+                          content
+                        )}
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
               )
             })

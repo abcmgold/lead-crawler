@@ -80,9 +80,9 @@ export function CustomSelect({
         <span className={cn("truncate", !selectedOption && "text-slate-500")}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        <ChevronDown 
-          className="h-4 w-4 opacity-50 shrink-0 ml-2 transition-transform duration-300" 
-          style={{ transform: isOpen ? 'rotate(180deg)' : 'none' }} 
+        <ChevronDown
+          className="h-4 w-4 opacity-50 shrink-0 ml-2 transition-transform duration-300"
+          style={{ transform: isOpen ? 'rotate(180deg)' : 'none' }}
         />
       </button>
 

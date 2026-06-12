@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Loader2, Clock, Trash2, Sparkles, X, ExternalLink, ChevronFirst, ChevronLast } from 'lucide-react';
+import { Search, Loader2, Clock, Trash2, Sparkles, X, ExternalLink, ChevronFirst, ChevronLast, CheckCircle2, AlertCircle } from 'lucide-react';
 import { HistoryItem, Lead } from './types';
 import { apiFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,7 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
   const [showProgressCard, setShowProgressCard] = useState(false);
   const [crawlStatus, setCrawlStatus] = useState('Đang quét...');
   const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
-  
+
   // Leads details modal states
   const [selectedCrawlLog, setSelectedCrawlLog] = useState<HistoryItem | null>(null);
   const [showLogLeadsModal, setShowLogLeadsModal] = useState(false);
@@ -477,17 +477,30 @@ const ProgressCard = React.memo(function ProgressCard({
   consoleLogs,
   consoleContainerRef
 }: ProgressCardProps) {
+  const getStatusIcon = () => {
+    if (crawlStatus === 'Đang quét...') {
+      return <Loader2 className="w-4 h-4 text-primary animate-spin" />;
+    }
+    if (crawlStatus === 'Hoàn thành') {
+      return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
+    }
+    if (crawlStatus === 'Lỗi') {
+      return <AlertCircle className="w-4 h-4 text-rose-400" />;
+    }
+    return <Clock className="w-4 h-4 text-slate-400" />;
+  };
+
   if (!showProgressCard) return null;
   return (
     <div className="glass-panel rounded-2xl p-6 shadow-xl space-y-4 animate-scale-in">
       <div className="flex justify-between items-center">
         <h4 className="font-bold text-white flex items-center gap-2">
-          <Loader2 className={`w-4 h-4 text-primary ${crawlStatus === 'Đang quét...' ? 'animate-spin' : ''}`} />
+          {getStatusIcon()}
           Tiến Trình Cào Dữ Liệu
         </h4>
         <span className={`text-xs px-3 py-1 rounded-full font-semibold border ${crawlStatus === 'Hoàn thành' ? 'bg-emerald-950/30 text-emerald-400 border-emerald-500/20' :
-            crawlStatus === 'Lỗi' ? 'bg-rose-950/30 text-rose-400 border-rose-500/20' :
-              'bg-primary/20 text-primary border-primary/20 animate-pulse'
+          crawlStatus === 'Lỗi' ? 'bg-rose-950/30 text-rose-400 border-rose-500/20' :
+            'bg-primary/20 text-primary border-primary/20 animate-pulse'
           }`}>
           {crawlStatus}
         </span>
@@ -501,15 +514,15 @@ const ProgressCard = React.memo(function ProgressCard({
       </div>
 
       {/* Console Output */}
-      <div 
+      <div
         ref={consoleContainerRef}
         className="bg-slate-950/80 border border-white/5 rounded-xl p-4 h-48 sm:h-64 overflow-y-auto font-mono text-xs text-sky-400 space-y-1.5 scrollbar-thin"
       >
         {consoleLogs.map((log, idx) => (
           <div key={idx} className={`leading-relaxed border-l-2 pl-2 ${log.type === 'success' ? 'text-emerald-400 border-emerald-500/40' :
-              log.type === 'error' ? 'text-rose-400 border-rose-500/40' :
-                log.type === 'warning' ? 'text-amber-400 border-amber-500/40' :
-                  'text-sky-400 border-sky-500/20'
+            log.type === 'error' ? 'text-rose-400 border-rose-500/40' :
+              log.type === 'warning' ? 'text-amber-400 border-amber-500/40' :
+                'text-sky-400 border-sky-500/20'
             }`}>
             <span className="text-slate-500 mr-2">[{log.timestamp}]</span>
             {log.message}

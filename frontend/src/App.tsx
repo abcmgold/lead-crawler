@@ -186,8 +186,7 @@ export default function App() {
                     to={item.path}
                     onClick={() => setMobileMenuOpen(false)}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 cursor-pointer ${
-                        isActive ? activeNavClass : inactiveNavClass
+                      `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 cursor-pointer ${isActive ? activeNavClass : inactiveNavClass
                       }`
                     }
                   >
@@ -196,7 +195,7 @@ export default function App() {
                   </NavLink>
                 );
               })}
-              
+
               {/* Small SMTP Indicator in Mobile Menu */}
               <div className="flex items-center gap-2 bg-slate-900/60 border border-white/5 px-4 py-3 rounded-xl text-xs font-semibold text-slate-400 font-mono shadow-inner select-none mt-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
