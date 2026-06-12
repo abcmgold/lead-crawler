@@ -18,6 +18,7 @@ interface CustomSelectProps {
   className?: string
   triggerClassName?: string
   contentClassName?: string
+  openDirection?: 'up' | 'down'
 }
 
 /**
@@ -36,6 +37,7 @@ export function CustomSelect({
   className,
   triggerClassName,
   contentClassName,
+  openDirection = 'down',
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedValue, setSelectedValue] = useState(value || defaultValue || "")
@@ -90,7 +92,8 @@ export function CustomSelect({
       {isOpen && (
         <div
           className={cn(
-            "absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-white/10 bg-slate-950/95 p-1 text-white shadow-2xl backdrop-blur-md animate-scale-in scrollbar-thin",
+            "absolute z-50 max-h-60 w-full overflow-auto rounded-xl border border-white/10 bg-slate-950/95 p-1 text-white shadow-2xl backdrop-blur-md animate-scale-in scrollbar-thin",
+            openDirection === 'up' ? "bottom-full mb-1 origin-bottom" : "top-full mt-1 origin-top",
             contentClassName
           )}
         >

@@ -32,7 +32,7 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
   const [pageSize, setPageSize] = useState<number>(25);
   const [crawlLogs, setCrawlLogs] = useState<HistoryItem[]>([]);
   const [selectedLogId, setSelectedLogId] = useState<string>('');
-  
+
   // Local paginated leads data
   const [paginatedLeads, setPaginatedLeads] = useState<Lead[]>([]);
   const [totalLeadsCount, setTotalLeadsCount] = useState(0);
@@ -392,6 +392,7 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
                   value: String(n),
                   label: String(n)
                 }))}
+                openDirection="up"
               />
             </div>
           </div>
