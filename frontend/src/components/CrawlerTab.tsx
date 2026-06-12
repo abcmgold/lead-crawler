@@ -1,19 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Loader2, Clock, Trash2, Sparkles, ChevronFirst, ChevronLast, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Search, Loader2, Clock, Trash2, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 import { HistoryItem, Lead } from './types';
 import { apiFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import ConfirmDialog from './ConfirmDialog';
 import CrawlLeadsModal from './CrawlLeadsModal';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
 import { DataTable, Column } from '@/components/ui/data-table';
 
 interface CrawlerTabProps {
@@ -93,19 +84,6 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
 
   const goToModalPage = (page: number) => {
     if (page >= 1 && page <= modalTotalPages) setModalCurrentPage(page);
-  };
-
-  const getModalPageNumbers = (): (number | 'ellipsis')[] => {
-    if (modalTotalPages <= 7) return Array.from({ length: modalTotalPages }, (_, i) => i + 1);
-    const pages: (number | 'ellipsis')[] = [];
-    if (safeModalPage <= 4) {
-      pages.push(1, 2, 3, 4, 5, 'ellipsis', modalTotalPages);
-    } else if (safeModalPage >= modalTotalPages - 3) {
-      pages.push(1, 'ellipsis', modalTotalPages - 4, modalTotalPages - 3, modalTotalPages - 2, modalTotalPages - 1, modalTotalPages);
-    } else {
-      pages.push(1, 'ellipsis', safeModalPage - 1, safeModalPage, safeModalPage + 1, 'ellipsis', modalTotalPages);
-    }
-    return pages;
   };
 
   const consoleContainerRef = useRef<HTMLDivElement>(null);
@@ -232,23 +210,9 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
 
   const historyTotalPages = Math.max(1, Math.ceil(historyTotalCount / historyPageSize));
   const safeHistoryPage = Math.min(historyPage, historyTotalPages);
-  const historyStartIndex = (safeHistoryPage - 1) * historyPageSize;
 
   const goToHistoryPage = (page: number) => {
     if (page >= 1 && page <= historyTotalPages) setHistoryPage(page);
-  };
-
-  const getHistoryPageNumbers = (): (number | 'ellipsis')[] => {
-    if (historyTotalPages <= 7) return Array.from({ length: historyTotalPages }, (_, i) => i + 1);
-    const pages: (number | 'ellipsis')[] = [];
-    if (safeHistoryPage <= 4) {
-      pages.push(1, 2, 3, 4, 5, 'ellipsis', historyTotalPages);
-    } else if (safeHistoryPage >= historyTotalPages - 3) {
-      pages.push(1, 'ellipsis', historyTotalPages - 4, historyTotalPages - 3, historyTotalPages - 2, historyTotalPages - 1, historyTotalPages);
-    } else {
-      pages.push(1, 'ellipsis', safeHistoryPage - 1, safeHistoryPage, safeHistoryPage + 1, 'ellipsis', historyTotalPages);
-    }
-    return pages;
   };
 
   return (
@@ -313,9 +277,7 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
         totalCount={historyTotalCount}
         currentPage={safeHistoryPage}
         totalPages={historyTotalPages}
-        startIndex={historyStartIndex}
         pageSize={historyPageSize}
-        pageNumbers={getHistoryPageNumbers()}
         onPageChange={goToHistoryPage}
         onClearHistoryClick={() => setShowClearHistoryConfirm(true)}
         onRowClick={(log) => {
@@ -345,7 +307,6 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
         currentPage={safeModalPage}
         totalPages={modalTotalPages}
         pageSize={modalPageSize}
-        pageNumbers={getModalPageNumbers()}
         onPageChange={goToModalPage}
         onClose={() => setShowLogLeadsModal(false)}
       />
@@ -431,9 +392,7 @@ interface HistoryCardProps {
   totalCount: number;
   currentPage: number;
   totalPages: number;
-  startIndex: number;
   pageSize: number;
-  pageNumbers: (number | 'ellipsis')[];
   onPageChange: (page: number) => void;
   onClearHistoryClick: () => void;
   onRowClick: (log: HistoryItem) => void;
@@ -445,9 +404,7 @@ const HistoryCard = React.memo(function HistoryCard({
   totalCount,
   currentPage,
   totalPages,
-  startIndex,
   pageSize,
-  pageNumbers,
   onPageChange,
   onClearHistoryClick,
   onRowClick
@@ -515,90 +472,15 @@ const HistoryCard = React.memo(function HistoryCard({
           emptyState="Chưa có lịch sử quét nào."
           containerClassName="rounded-xl border border-white/5 overflow-hidden"
           className="w-full text-sm text-left text-slate-300"
+          pagination={{
+            currentPage,
+            totalPages,
+            totalCount,
+            pageSize,
+            onPageChange,
+            itemLabel: "phiên quét",
+          }}
         />
-      )}
-
-      {/* Pagination footer */}
-      {(totalPages > 1 || totalCount > 0) && !loading && (
-        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="text-xs text-slate-400 font-mono">
-            {totalCount > 0 && (
-              <>Hiển thị <span className="text-white font-semibold">{startIndex + 1}–{Math.min(startIndex + pageSize, totalCount)}</span> trong số <span className="text-white font-semibold">{totalCount}</span> phiên quét</>
-            )}
-          </div>
-          {totalPages > 1 && (
-            <Pagination className="w-auto mx-0">
-              <PaginationContent className="gap-0.5">
-                <PaginationItem>
-                  <PaginationLink
-                    href="#"
-                    onClick={(e) => { e.preventDefault(); onPageChange(1); }}
-                    aria-disabled={currentPage === 1}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg border-0 transition-all text-slate-400 hover:text-white hover:bg-white/5 ${currentPage === 1 ? 'opacity-30 pointer-events-none' : ''}`}
-                    aria-label="First page"
-                  >
-                    <ChevronFirst className="w-4 h-4" />
-                  </PaginationLink>
-                </PaginationItem>
-
-                <PaginationItem>
-                  <PaginationPrevious
-                    text="Trước"
-                    href="#"
-                    onClick={(e) => { e.preventDefault(); onPageChange(currentPage - 1); }}
-                    aria-disabled={currentPage === 1}
-                    className={`text-xs h-8 rounded-lg border-0 text-slate-400 hover:text-white hover:bg-white/5 transition-all ${currentPage === 1 ? 'opacity-30 pointer-events-none' : ''}`}
-                  />
-                </PaginationItem>
-
-                {pageNumbers.map((page, idx) =>
-                  page === 'ellipsis' ? (
-                    <PaginationItem key={`hist-ellipsis-${idx}`}>
-                      <PaginationEllipsis className="text-slate-500 w-8 h-8" />
-                    </PaginationItem>
-                  ) : (
-                    <PaginationItem key={`hist-page-${page}`}>
-                      <PaginationLink
-                        href="#"
-                        isActive={page === currentPage}
-                        onClick={(e) => { e.preventDefault(); onPageChange(page); }}
-                        className={`w-8 h-8 text-xs rounded-lg border-0 transition-all ${
-                          page === currentPage
-                            ? 'bg-gradient-to-r from-primary to-primary-to text-white shadow-md shadow-primary/20 font-bold border-0'
-                            : 'text-slate-400 hover:text-white hover:bg-white/5'
-                        }`}
-                      >
-                        {page}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )
-                )}
-
-                <PaginationItem>
-                  <PaginationNext
-                    text="Sau"
-                    href="#"
-                    onClick={(e) => { e.preventDefault(); onPageChange(currentPage + 1); }}
-                    aria-disabled={currentPage === totalPages}
-                    className={`text-xs h-8 rounded-lg border-0 text-slate-400 hover:text-white hover:bg-white/5 transition-all ${currentPage === totalPages ? 'opacity-30 pointer-events-none' : ''}`}
-                  />
-                </PaginationItem>
-
-                <PaginationItem>
-                  <PaginationLink
-                    href="#"
-                    onClick={(e) => { e.preventDefault(); onPageChange(totalPages); }}
-                    aria-disabled={currentPage === totalPages}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg border-0 transition-all text-slate-400 hover:text-white hover:bg-white/5 ${currentPage === totalPages ? 'opacity-30 pointer-events-none' : ''}`}
-                    aria-label="Last page"
-                  >
-                    <ChevronLast className="w-4 h-4" />
-                  </PaginationLink>
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
-        </div>
       )}
     </div>
   );

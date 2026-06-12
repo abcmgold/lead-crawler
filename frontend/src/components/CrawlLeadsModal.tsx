@@ -1,17 +1,8 @@
 import React from 'react';
-import { Loader2, ExternalLink, ChevronFirst, ChevronLast } from 'lucide-react';
+import { Loader2, ExternalLink } from 'lucide-react';
 import { HistoryItem, Lead } from './types';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
 import { DataTable, Column } from '@/components/ui/data-table';
 
 interface CrawlLeadsModalProps {
@@ -23,7 +14,6 @@ interface CrawlLeadsModalProps {
   currentPage: number;
   totalPages: number;
   pageSize: number;
-  pageNumbers: (number | 'ellipsis')[];
   onPageChange: (page: number) => void;
   onClose: () => void;
 }
@@ -37,7 +27,6 @@ export default function CrawlLeadsModal({
   currentPage,
   totalPages,
   pageSize,
-  pageNumbers,
   onPageChange,
   onClose,
 }: CrawlLeadsModalProps) {
@@ -92,8 +81,6 @@ export default function CrawlLeadsModal({
 
   if (!crawlLog) return null;
 
-  const startIndex = (currentPage - 1) * pageSize;
-
   return (
     <Modal
       open={open}
@@ -102,97 +89,13 @@ export default function CrawlLeadsModal({
       title={`Kết quả cào cho: "${crawlLog.keyword}"`}
       description={`Thời gian: ${new Date(crawlLog.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} | Tìm thấy ${totalCount} leads`}
       footer={
-        <>
-          <div className="text-xs text-slate-400 font-mono">
-            {totalCount > 0 && !loading && (
-              <>
-                Hiển thị <span className="text-white font-semibold">{startIndex + 1}–{Math.min(startIndex + pageSize, totalCount)}</span> trong số <span className="text-white font-semibold">{totalCount}</span> leads
-              </>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            {totalPages > 1 && !loading && (
-              <Pagination className="w-auto mx-0">
-                <PaginationContent className="gap-0.5">
-                  <PaginationItem>
-                    <PaginationLink
-                      href="#"
-                      onClick={(e) => { e.preventDefault(); onPageChange(1); }}
-                      aria-disabled={currentPage === 1}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg border-0 transition-all text-slate-400 hover:text-white hover:bg-white/5 ${currentPage === 1 ? 'opacity-30 pointer-events-none' : ''}`}
-                      aria-label="First page"
-                    >
-                      <ChevronFirst className="w-4 h-4" />
-                    </PaginationLink>
-                  </PaginationItem>
-
-                  <PaginationItem>
-                    <PaginationPrevious
-                      text="Trước"
-                      href="#"
-                      onClick={(e) => { e.preventDefault(); onPageChange(currentPage - 1); }}
-                      aria-disabled={currentPage === 1}
-                      className={`text-xs h-8 rounded-lg border-0 text-slate-400 hover:text-white hover:bg-white/5 transition-all ${currentPage === 1 ? 'opacity-30 pointer-events-none' : ''}`}
-                    />
-                  </PaginationItem>
-
-                  {pageNumbers.map((page, idx) =>
-                    page === 'ellipsis' ? (
-                      <PaginationItem key={`modal-ellipsis-${idx}`}>
-                        <PaginationEllipsis className="text-slate-500 w-8 h-8" />
-                      </PaginationItem>
-                    ) : (
-                      <PaginationItem key={`modal-page-${page}`}>
-                        <PaginationLink
-                          href="#"
-                          isActive={page === currentPage}
-                          onClick={(e) => { e.preventDefault(); onPageChange(page); }}
-                          className={`w-8 h-8 text-xs rounded-lg border-0 transition-all ${page === currentPage
-                            ? 'bg-gradient-to-r from-primary to-primary-to text-white shadow-md shadow-primary/20 font-bold border-0'
-                            : 'text-slate-400 hover:text-white hover:bg-white/5'
-                            }`}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    )
-                  )}
-
-                  <PaginationItem>
-                    <PaginationNext
-                      text="Sau"
-                      href="#"
-                      onClick={(e) => { e.preventDefault(); onPageChange(currentPage + 1); }}
-                      aria-disabled={currentPage === totalPages}
-                      className={`text-xs h-8 rounded-lg border-0 text-slate-400 hover:text-white hover:bg-white/5 transition-all ${currentPage === totalPages ? 'opacity-30 pointer-events-none' : ''}`}
-                    />
-                  </PaginationItem>
-
-                  <PaginationItem>
-                    <PaginationLink
-                      href="#"
-                      onClick={(e) => { e.preventDefault(); onPageChange(totalPages); }}
-                      aria-disabled={currentPage === totalPages}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg border-0 transition-all text-slate-400 hover:text-white hover:bg-white/5 ${currentPage === totalPages ? 'opacity-30 pointer-events-none' : ''}`}
-                      aria-label="Last page"
-                    >
-                      <ChevronLast className="w-4 h-4" />
-                    </PaginationLink>
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            )}
-
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="bg-slate-800 hover:bg-slate-700 border border-white/10 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all cursor-pointer font-sans h-auto"
-            >
-              Đóng
-            </Button>
-          </div>
-        </>
+        <Button
+          variant="outline"
+          onClick={onClose}
+          className="bg-slate-800 hover:bg-slate-700 border border-white/10 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all cursor-pointer font-sans h-auto ml-auto"
+        >
+          Đóng
+        </Button>
       }
     >
       {loading ? (
@@ -214,6 +117,14 @@ export default function CrawlLeadsModal({
           containerClassName="rounded-xl border border-white/5 bg-slate-950/20 overflow-hidden flex-1 flex flex-col min-h-0"
           wrapperClassName="flex-1 min-h-0"
           scrollableBody
+          pagination={{
+            currentPage,
+            totalPages,
+            totalCount,
+            pageSize,
+            onPageChange,
+            itemLabel: "leads",
+          }}
         />
       )}
     </Modal>
