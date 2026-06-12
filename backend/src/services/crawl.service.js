@@ -246,22 +246,20 @@ function extractContacts(html, info) {
     }
   }
 
-  // Stricter Vietnam phone regex:
-  // - Exactly 10 digits starting with 03x, 05x, 07x, 08x, 09x (mobile)
-  // - OR landline: 02x + 8 digits  (e.g. 0287654321)
-  // - OR +84 prefix followed by 9 digits
-  // Uses word boundaries / context to avoid matching floating-point numbers in JS/CSS
-  const phoneRegex = /(?<![\d.,])(?:\+84|0)(?:(?:3[2-9]|5[6-9]|7[0-9]|8[0-9]|9[0-9])\d{7}|(?:2[0-9])\d{8})(?![\d.])/g;
+  // Generic international phone regex:
+  // Matches phone numbers with optional country codes, area codes, and various delimiters (spaces, dots, dashes, parentheses).
+  // Uses negative lookbehind/lookahead to avoid matching numbers in decimals or long IDs.
+  const phoneRegex = /(?<![\d.,])(?:\+\d{1,3}[ -.]?)?\(?\d{2,5}\)?[ -.]?\d{2,5}[ -.]?\d{2,5}[ -.]?\d{2,9}(?!\d)/g;
   const phonesFound = html.match(phoneRegex);
   if (phonesFound) {
     phonesFound.forEach(phone => {
-      // Normalize: strip spaces/dots/dashes, convert +84xxx → 0xxx
-      let cleanPhone = phone.replace(/[\s.-]/g, '');
+      // Normalize: strip spaces, dots, dashes, parentheses, keeping digits and '+'
+      let cleanPhone = phone.replace(/[^\d+]/g, '');
       if (cleanPhone.startsWith('+84')) {
         cleanPhone = '0' + cleanPhone.slice(3);
       }
-      // Must be exactly 10 digits after normalization
-      if (/^0\d{9}$/.test(cleanPhone)) {
+      // Allow any phone numbers between 8 and 15 digits
+      if (/^\+?\d{8,15}$/.test(cleanPhone)) {
         info.phones.push(cleanPhone);
       }
     });
