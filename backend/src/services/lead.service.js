@@ -37,10 +37,10 @@ async function addLeadsFromCrawl(crawled, keyword, crawlLogId) {
       email,
       phone: uniquePhones.length > 0 ? uniquePhones.join(', ') : (existing ? existing.phone : ''),
       website: crawled.url || (existing ? existing.website : ''),
-      keyword,
-      createdAt: new Date().toISOString(),
+      keyword: existing ? existing.keyword : keyword,
+      createdAt: existing ? existing.createdAt : new Date().toISOString(),
       emailStatus: existing ? existing.emailStatus : 'Chưa gửi',
-      crawlLogId
+      crawlLogId: existing ? existing.crawlLogId : crawlLogId
     });
 
     if (!existing) {

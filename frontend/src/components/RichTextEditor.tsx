@@ -14,13 +14,15 @@ export default function RichTextEditor({ value, onChange, placeholder, disabled 
   const [isCodeView, setIsCodeView] = useState(false);
 
   const lastValueRef = useRef(value);
+  const isFirstRender = useRef(true);
 
   // Sync value from prop to innerHTML on mount or when value changes externally
   useEffect(() => {
     if (!isCodeView && editorRef.current) {
-      if (value !== lastValueRef.current) {
+      if (isFirstRender.current || value !== lastValueRef.current) {
         editorRef.current.innerHTML = value || '';
         lastValueRef.current = value;
+        isFirstRender.current = false;
       }
     }
   }, [value, isCodeView]);
@@ -94,6 +96,16 @@ export default function RichTextEditor({ value, onChange, placeholder, disabled 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      const maxSizeBytes = 300 * 1024; // 300KB limit
+      if (file.size > maxSizeBytes) {
+        alert(`Kích thước ảnh quá lớn (${(file.size / 1024).toFixed(1)}KB). Vui lòng chọn ảnh nhỏ hơn 300KB để tối ưu hóa dung lượng cơ sở dữ liệu.`);
+        // reset input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onload = () => {
         const base64Url = reader.result as string;

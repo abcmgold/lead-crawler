@@ -32,6 +32,11 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
   const [pageSize, setPageSize] = useState<number>(25);
   const [crawlLogs, setCrawlLogs] = useState<HistoryItem[]>([]);
   const [selectedLogId, setSelectedLogId] = useState<string>('');
+  
+  // Local paginated leads data
+  const [paginatedLeads, setPaginatedLeads] = useState<Lead[]>([]);
+  const [totalLeadsCount, setTotalLeadsCount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadCrawlLogs();
@@ -53,47 +58,49 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
     const timer = setTimeout(() => {
       setSearchQuery(searchTerm);
       setCurrentPage(1);
-    }, 200);
+    }, 250);
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Filter leads and sort by newest first
-  const filteredLeads = useMemo(() => {
-    let result = leads;
-
-    if (selectedLogId) {
-      const log = crawlLogs.find(l => l.id === selectedLogId);
-      if (log) {
-        result = result.filter(lead => {
-          if (lead.crawlLogId === selectedLogId) return true;
-          // Fallback matching
-          if (lead.keyword === log.keyword) {
-            const leadTime = new Date(lead.createdAt).getTime();
-            const logTime = new Date(log.timestamp).getTime();
-            return Math.abs(leadTime - logTime) < 120000; // 2 minutes
-          }
-          return false;
-        });
+  const fetchPaginatedLeads = async () => {
+    setLoading(true);
+    try {
+      const queryParams = new URLSearchParams({
+        page: String(currentPage),
+        limit: String(pageSize),
+        search: searchQuery,
+        crawlLogId: selectedLogId
+      });
+      const res = await apiFetch(`/api/leads?${queryParams.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPaginatedLeads(data.leads || []);
+        setTotalLeadsCount(data.total || 0);
       }
+    } catch (err) {
+      console.error('Lỗi khi tải dữ liệu leads phân trang:', err);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    return result
-      .filter(lead =>
-        lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.phone.includes(searchQuery) ||
-        lead.website.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [leads, searchQuery, selectedLogId, crawlLogs]);
+  // Fetch data whenever pagination parameters change
+  useEffect(() => {
+    fetchPaginatedLeads();
+  }, [currentPage, pageSize, searchQuery, selectedLogId]);
 
-  const isAllFilteredSelected = filteredLeads.length > 0 && filteredLeads.every(l => selectedIds.has(l.id));
+  // Sync if new leads are crawled (CrawlerTab triggers parent leads update)
+  useEffect(() => {
+    fetchPaginatedLeads();
+  }, [leads]);
+
+  const isAllFilteredSelected = paginatedLeads.length > 0 && paginatedLeads.every(l => selectedIds.has(l.id));
 
   // Pagination calculations
-  const totalPages = Math.max(1, Math.ceil(filteredLeads.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(totalLeadsCount / pageSize));
   const safePage = Math.min(currentPage, totalPages);
+  const pagedLeads = paginatedLeads;
   const startIndex = (safePage - 1) * pageSize;
-  const pagedLeads = filteredLeads.slice(startIndex, startIndex + pageSize);
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
@@ -114,12 +121,13 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
   };
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nextSelected = new Set(selectedIds);
     if (e.target.checked) {
-      const allIds = new Set(filteredLeads.map(l => l.id));
-      onSelectionChange(allIds);
+      paginatedLeads.forEach(l => nextSelected.add(l.id));
     } else {
-      onSelectionChange(new Set());
+      paginatedLeads.forEach(l => nextSelected.delete(l.id));
     }
+    onSelectionChange(nextSelected);
   };
 
   const handleSelectOne = (id: string, checked: boolean) => {
@@ -224,37 +232,50 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
     }
   ], [isAllFilteredSelected, selectedIds, handleSelectAll, handleSelectOne]);
 
-  const handleExportCSV = () => {
-    if (leads.length === 0) {
-      showToast('Không có dữ liệu để xuất!', true);
-      return;
+  const handleExportCSV = async () => {
+    try {
+      const queryParams = new URLSearchParams({
+        search: searchQuery,
+        crawlLogId: selectedLogId
+      });
+      const res = await apiFetch(`/api/leads?${queryParams.toString()}`);
+      if (!res.ok) throw new Error('Không thể tải dữ liệu để xuất');
+      const exportLeads: Lead[] = await res.json();
+
+      if (exportLeads.length === 0) {
+        showToast('Không có dữ liệu để xuất!', true);
+        return;
+      }
+
+      let csvContent = "\uFEFF"; // UTF-8 BOM
+      csvContent += "Tên Doanh Nghiệp,Email,Số điện thoại,Website,Trạng thái Email,Từ khóa,Ngày tạo\n";
+
+      exportLeads.forEach(lead => {
+        const row = [
+          `"${lead.name.replace(/"/g, '""')}"`,
+          `"${lead.email}"`,
+          `"${lead.phone || ''}"`,
+          `"${lead.website}"`,
+          `"${lead.emailStatus}"`,
+          `"${lead.keyword}"`,
+          `"${lead.createdAt}"`
+        ].join(",");
+        csvContent += row + "\n";
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `leads_export_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Đã tải xuống file CSV thành công!');
+    } catch (err) {
+      console.error(err);
+      showToast('Có lỗi xảy ra khi xuất file CSV!', true);
     }
-
-    let csvContent = "\uFEFF"; // UTF-8 BOM
-    csvContent += "Tên Doanh Nghiệp,Email,Số điện thoại,Website,Trạng thái Email,Từ khóa,Ngày tạo\n";
-
-    leads.forEach(lead => {
-      const row = [
-        `"${lead.name.replace(/"/g, '""')}"`,
-        `"${lead.email}"`,
-        `"${lead.phone}"`,
-        `"${lead.website}"`,
-        `"${lead.emailStatus}"`,
-        `"${lead.keyword}"`,
-        `"${lead.createdAt}"`
-      ].join(",");
-      csvContent += row + "\n";
-    });
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `leads_export_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('Đã tải xuống file CSV thành công!');
   };
 
 
@@ -339,7 +360,7 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
             const isSelected = selectedIds.has(lead.id);
             return `border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer ${isSelected ? 'bg-primary/[0.03]' : ''}`;
           }}
-          emptyState={leads.length === 0 ? 'Chưa có leads nào. Hãy quét từ khóa ở tab cào.' : 'Không tìm thấy kết quả phù hợp.'}
+          emptyState={totalLeadsCount === 0 ? 'Chưa có leads nào. Hãy quét từ khóa ở tab cào.' : 'Không tìm thấy kết quả phù hợp.'}
           containerClassName="relative w-full overflow-x-auto"
           className="w-full text-sm text-left text-slate-300 border-collapse"
         />
@@ -349,15 +370,15 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
           {/* Info + page size */}
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-slate-400 font-mono">
             <span>
-              {filteredLeads.length === 0 ? (
+              {totalLeadsCount === 0 ? (
                 'Không có dữ liệu'
               ) : (
                 <>
-                  <span className="text-white font-semibold">{startIndex + 1}–{Math.min(startIndex + pageSize, filteredLeads.length)}</span>
+                  <span className="text-white font-semibold">{startIndex + 1}–{Math.min(startIndex + pageSize, totalLeadsCount)}</span>
                   {' / '}
-                  <span className="text-white font-semibold">{filteredLeads.length}</span>
+                  <span className="text-white font-semibold">{totalLeadsCount}</span>
                   {' leads'}
-                  {filteredLeads.length !== leads.length && (
+                  {totalLeadsCount !== leads.length && (
                     <span className="text-slate-500"> (lọc từ {leads.length})</span>
                   )}
                 </>

@@ -17,7 +17,7 @@ function parseDdgResults($, urls) {
         const parsedUrl = new URL(href, 'https://html.duckduckgo.com');
         const uddg = parsedUrl.searchParams.get('uddg');
         if (uddg) href = uddg;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (href && href.startsWith('http') && !href.includes('duckduckgo.com') && !href.includes('google.com') && !href.includes('youtube.com') && !href.includes('facebook.com') && !href.includes('twitter.com') && !href.includes('instagram.com')) {
@@ -26,7 +26,7 @@ function parseDdgResults($, urls) {
         if (!urls.some(u => new URL(u).hostname === parsed.hostname)) {
           urls.push(href);
         }
-      } catch (e) {}
+      } catch (e) { }
     }
   });
 
@@ -40,7 +40,7 @@ function parseDdgResults($, urls) {
         if (!urls.some(u => new URL(u).hostname === parsed.hostname)) {
           urls.push(formattedUrl);
         }
-      } catch (e) {}
+      } catch (e) { }
     }
   });
 }
@@ -438,7 +438,7 @@ async function performCrawl(keyword) {
             uniqueDomains.add(parsed.hostname);
             urls.push(url);
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     };
 

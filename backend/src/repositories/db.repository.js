@@ -29,6 +29,74 @@ async function getLeads() {
   return rows.map(rowToLead);
 }
 
+async function getLeadsFiltered({ search = '', crawlLogId = '' } = {}) {
+  const params = [];
+  let query = 'SELECT * FROM leads';
+  let conditions = [];
+
+  if (search) {
+    params.push(`%${search}%`);
+    const searchIdx = params.length;
+    conditions.push(`(name ILIKE $${searchIdx} OR email ILIKE $${searchIdx} OR phone ILIKE $${searchIdx} OR website ILIKE $${searchIdx})`);
+  }
+
+  if (crawlLogId) {
+    params.push(crawlLogId);
+    const logIdx = params.length;
+    conditions.push(`crawl_log_id = $${logIdx}`);
+  }
+
+  if (conditions.length > 0) {
+    query += ' WHERE ' + conditions.join(' AND ');
+  }
+
+  query += ' ORDER BY created_at DESC';
+
+  const { rows } = await pool.query(query, params);
+  return rows.map(rowToLead);
+}
+
+async function getLeadsPaginated({ page = 1, limit = 25, search = '', crawlLogId = '' }) {
+  const offset = (page - 1) * limit;
+  const params = [];
+  let query = 'SELECT * FROM leads';
+  let countQuery = 'SELECT COUNT(*) FROM leads';
+  let conditions = [];
+
+  if (search) {
+    params.push(`%${search}%`);
+    const searchIdx = params.length;
+    conditions.push(`(name ILIKE $${searchIdx} OR email ILIKE $${searchIdx} OR phone ILIKE $${searchIdx} OR website ILIKE $${searchIdx})`);
+  }
+
+  if (crawlLogId) {
+    params.push(crawlLogId);
+    const logIdx = params.length;
+    conditions.push(`crawl_log_id = $${logIdx}`);
+  }
+
+  if (conditions.length > 0) {
+    const whereClause = ' WHERE ' + conditions.join(' AND ');
+    query += whereClause;
+    countQuery += whereClause;
+  }
+
+  query += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+
+  const countParams = [...params];
+  params.push(limit, offset);
+
+  const { rows } = await pool.query(query, params);
+  const countRes = await pool.query(countQuery, countParams);
+
+  return {
+    leads: rows.map(rowToLead),
+    total: parseInt(countRes.rows[0].count, 10),
+    page,
+    limit
+  };
+}
+
 async function findLeadByEmail(email) {
   const { rows } = await pool.query('SELECT * FROM leads WHERE email = $1', [email]);
   return rows[0] ? rowToLead(rows[0]) : null;
@@ -39,9 +107,9 @@ async function insertLead(lead) {
     `INSERT INTO leads (id, name, email, phone, website, keyword, created_at, email_status, crawl_log_id)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      ON CONFLICT (email) DO UPDATE SET
-       crawl_log_id = EXCLUDED.crawl_log_id,
-       keyword = EXCLUDED.keyword,
-       created_at = EXCLUDED.created_at`,
+       name = COALESCE(NULLIF(EXCLUDED.name, ''), leads.name),
+       phone = COALESCE(NULLIF(EXCLUDED.phone, ''), leads.phone),
+       website = COALESCE(NULLIF(EXCLUDED.website, ''), leads.website)`,
     [lead.id, lead.name, lead.email, lead.phone, lead.website, lead.keyword, lead.createdAt, lead.emailStatus, lead.crawlLogId || null]
   );
 }
@@ -164,6 +232,8 @@ async function deleteTemplate(id) {
 
 module.exports = {
   getLeads,
+  getLeadsFiltered,
+  getLeadsPaginated,
   findLeadByEmail,
   insertLead,
   updateLeadPhone,

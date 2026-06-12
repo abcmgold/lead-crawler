@@ -3,6 +3,26 @@ const leadService = require('../services/lead.service');
 const { logSystem } = require('../utils/logger');
 
 async function getLeads(req, res) {
+  const { page, limit, search, crawlLogId } = req.query;
+  
+  if (page && limit) {
+    const result = await dbRepo.getLeadsPaginated({
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
+      search: search || '',
+      crawlLogId: crawlLogId || ''
+    });
+    return res.json(result);
+  }
+
+  if (search || crawlLogId) {
+    const result = await dbRepo.getLeadsFiltered({
+      search: search || '',
+      crawlLogId: crawlLogId || ''
+    });
+    return res.json(result);
+  }
+
   res.json(await dbRepo.getLeads());
 }
 
