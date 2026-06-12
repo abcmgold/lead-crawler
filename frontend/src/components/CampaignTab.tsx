@@ -441,7 +441,8 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                       value={selectedLogId}
                       onValueChange={(val) => setSelectedLogId(val)}
                       placeholder="-- Chọn lần cào để thêm --"
-                      triggerClassName="flex-1 bg-slate-950/60"
+                      className="flex-1"
+                      triggerClassName="bg-slate-950/60"
                       options={crawlLogs.map(log => {
                         const dateStr = new Date(log.timestamp).toLocaleString('vi-VN', {
                           month: 'numeric',

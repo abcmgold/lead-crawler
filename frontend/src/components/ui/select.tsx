@@ -67,7 +67,7 @@ export function CustomSelect({
   const selectedOption = options.find((opt) => opt.value === selectedValue)
 
   return (
-    <div ref={containerRef} className={cn("relative w-full", className)}>
+    <div ref={containerRef} className={cn("relative w-full min-w-0", className)}>
       {/* Trigger Button */}
       <button
         type="button"
