@@ -12,6 +12,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { DataTable, Column } from '@/components/ui/data-table';
+import { CustomSelect } from '@/components/ui/select';
 
 interface LeadsTabProps {
   leads: Lead[];
@@ -170,12 +171,15 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
       id: 'email',
       header: "Email",
       accessor: (lead) => (
-        <code className="text-primary font-mono text-xs select-all bg-primary/5 px-2 py-1 rounded border border-primary/10">
+        <code 
+          title={lead.email}
+          className="text-primary font-mono text-xs select-all bg-primary/5 px-2 py-1 rounded border border-primary/10 block truncate max-w-[180px]"
+        >
           {lead.email}
         </code>
       ),
       className: "px-6 py-4 font-semibold font-sans",
-      cellClassName: "px-6 py-4",
+      cellClassName: "px-6 py-4 max-w-[200px]",
     },
     {
       id: 'phone',
@@ -192,15 +196,16 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
           href={lead.website}
           target="_blank"
           rel="noreferrer"
-          className="text-slate-400 hover:text-primary inline-flex items-center gap-1.5 hover:underline transition-colors duration-150 font-sans"
+          title={lead.website}
+          className="text-slate-400 hover:text-primary inline-flex items-center gap-1.5 hover:underline transition-colors duration-150 font-sans max-w-[180px]"
           onClick={(e) => e.stopPropagation()}
         >
-          {lead.website}
+          <span className="truncate">{lead.website}</span>
           <ExternalLink className="w-3.5 h-3.5 shrink-0" />
         </a>
       ),
       className: "px-6 py-4 font-semibold font-sans",
-      cellClassName: "px-6 py-4 max-w-[220px] truncate",
+      cellClassName: "px-6 py-4 max-w-[200px]",
     },
     {
       id: 'emailStatus',
@@ -274,29 +279,31 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
           </div>
 
           {/* Crawl Batch Filter */}
-          <select
-            value={selectedLogId}
-            onChange={(e) => {
-              setSelectedLogId(e.target.value);
+          <CustomSelect
+            value={selectedLogId || "all"}
+            onValueChange={(val) => {
+              setSelectedLogId(val === "all" ? "" : val);
               setCurrentPage(1);
             }}
-            className="bg-slate-950/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300 cursor-pointer min-w-[200px]"
-          >
-            <option value="" className="bg-slate-950 text-slate-400">-- Lọc theo lần cào --</option>
-            {crawlLogs.map(log => {
-              const dateStr = new Date(log.timestamp).toLocaleString('vi-VN', {
-                month: 'numeric',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: 'numeric'
-              });
-              return (
-                <option key={log.id} value={log.id} className="bg-slate-950 text-white">
-                  {log.keyword} ({dateStr}) — {log.newLeadsCount} leads
-                </option>
-              );
-            })}
-          </select>
+            placeholder="-- Lọc theo lần cào --"
+            className="w-full sm:w-[240px] shrink-0"
+            triggerClassName="bg-slate-950/40"
+            options={[
+              { value: "all", label: "-- Lọc theo lần cào --" },
+              ...crawlLogs.map(log => {
+                const dateStr = new Date(log.timestamp).toLocaleString('vi-VN', {
+                  month: 'numeric',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: 'numeric'
+                });
+                return {
+                  value: log.id,
+                  label: `${log.keyword} (${dateStr}) — ${log.newLeadsCount} leads`
+                };
+              })
+            ]}
+          />
         </div>
 
         {/* Buttons */}
@@ -357,15 +364,15 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
             {/* Page size selector */}
             <div className="flex items-center gap-1.5">
               <span className="text-slate-500">Hiển thị:</span>
-              <select
-                value={pageSize}
-                onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
-                className="bg-slate-950/60 border border-white/10 text-slate-300 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-primary/40 cursor-pointer"
-              >
-                {PAGE_SIZE_OPTIONS.map(n => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
+              <CustomSelect
+                value={String(pageSize)}
+                onValueChange={(val) => { setPageSize(Number(val)); setCurrentPage(1); }}
+                triggerClassName="bg-slate-950/60 border border-white/10 text-slate-300 rounded-lg px-2 py-1 text-xs font-mono w-16 h-7 focus:ring-0"
+                options={PAGE_SIZE_OPTIONS.map(n => ({
+                  value: String(n),
+                  label: String(n)
+                }))}
+              />
             </div>
           </div>
 

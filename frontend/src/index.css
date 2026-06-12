@@ -203,6 +203,15 @@
   display: list-item !important;
 }
 
+/* Prevent Radix Select scroll locking layout jumps */
+html[data-scroll-locked],
+html[data-scroll-locked] body,
+body[data-scroll-locked] {
+  overflow: visible !important;
+  margin-right: 0px !important;
+  padding-right: 0px !important;
+}
+
 .rich-text-editor-content a {
   color: var(--primary) !important;
   text-decoration: underline !important;

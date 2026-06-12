@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
-import { Search, Users, Mail, Settings, CheckCircle2, AlertCircle, Cpu, Database, LogOut, Loader2 } from 'lucide-react';
+import { Search, Users, Mail, Settings, CheckCircle2, AlertCircle, Cpu, Database, LogOut, Loader2, Menu, X } from 'lucide-react';
 import CrawlerTab from './components/CrawlerTab';
 import LeadsTab from './components/LeadsTab';
 import CampaignTab from './components/CampaignTab';
@@ -19,6 +19,7 @@ export default function App() {
   const [showClearLeadsConfirm, setShowClearLeadsConfirm] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [smtpSettings, setSmtpSettings] = useState<SmtpSettings>({ host: '', port: '', user: '', pass: '' });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Toast notifications state
   const [toast, setToast] = useState({ show: false, message: '', isError: false });
@@ -120,11 +121,17 @@ export default function App() {
       <div className="w-full z-10 relative flex-1 flex flex-col">
 
         {/* Top Floating Glass Navigation Header */}
-        <header className="w-full max-w-7xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6 shrink-0 sticky top-0 z-50 backdrop-blur-md">
+        <header className="w-full max-w-7xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6 shrink-0 fixed top-0 left-1/2 -translate-x-1/2 z-50 backdrop-blur-md">
           <div className="glass-panel rounded-2xl px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shadow-2xl relative">
 
             {/* Logo Area */}
             <div className="flex items-center gap-2 sm:gap-3 select-none">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden flex items-center justify-center w-9 h-9 shrink-0 bg-slate-950/60 border border-white/10 rounded-xl text-slate-300 hover:text-white transition-colors duration-300 cursor-pointer select-none"
+              >
+                {mobileMenuOpen ? <X className="w-4.5 h-4.5" /> : <Menu className="w-4.5 h-4.5" />}
+              </button>
               <Cpu className="w-6 h-6 sm:w-7 sm:h-7 text-primary animate-pulse" />
               <span className="text-base sm:text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-pink-400 to-purple-400 bg-clip-text text-transparent glow-text font-mono uppercase">
                 LeadCrawler
@@ -168,29 +175,39 @@ export default function App() {
 
           </div>
 
-          {/* Mobile Navigation */}
-          <div className="md:hidden flex overflow-x-auto gap-2 bg-slate-950/40 p-1.5 mt-3 rounded-xl border border-white/5 scrollbar-none">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-300 cursor-pointer ${isActive ? activeNavClass : inactiveNavClass
-                    }`
-                  }
-                >
-                  <Icon className="w-4 h-4" />
-                  {item.label}
-                </NavLink>
-              );
-            })}
-          </div>
+          {/* Mobile Navigation Dropdown */}
+          {mobileMenuOpen && (
+            <nav className="md:hidden flex flex-col gap-1.5 bg-slate-950/90 backdrop-blur-md p-3 mt-3 rounded-2xl border border-white/10 shadow-2xl animate-scale-in">
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 cursor-pointer ${
+                        isActive ? activeNavClass : inactiveNavClass
+                      }`
+                    }
+                  >
+                    <Icon className="w-5 h-5" />
+                    {item.label}
+                  </NavLink>
+                );
+              })}
+              
+              {/* Small SMTP Indicator in Mobile Menu */}
+              <div className="flex items-center gap-2 bg-slate-900/60 border border-white/5 px-4 py-3 rounded-xl text-xs font-semibold text-slate-400 font-mono shadow-inner select-none mt-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                SMTP: {smtpSettings.host ? 'OK' : 'CHƯA CẤU HÌNH'}
+              </div>
+            </nav>
+          )}
         </header>
 
         {/* Stats Bento Grid Header */}
-        <section className="w-full max-w-7xl mx-auto px-3 sm:px-4 mt-4 sm:mt-6 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 shrink-0">
+        <section className="w-full max-w-7xl mx-auto px-3 sm:px-4 mt-[120px] sm:mt-[140px] grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 shrink-0">
 
           <div className="glass-panel p-3 sm:p-5 rounded-2xl shadow-lg relative overflow-hidden flex items-center gap-3 sm:gap-4">
             <div className="p-2 sm:p-3 bg-primary/10 rounded-xl text-primary border border-primary/15 shrink-0">

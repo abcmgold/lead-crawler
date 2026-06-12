@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api';
 import RichTextEditor from './RichTextEditor';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import ConfirmDialog from './ConfirmDialog';
+import { CustomSelect } from './ui/select';
 
 interface CampaignTabProps {
   allLeads: Lead[];
@@ -58,8 +59,12 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
   const [selectedLogId, setSelectedLogId] = useState<string>('');
 
   useEffect(() => {
-    loadTemplates();
-    loadCrawlLogs();
+    // Tránh re-render làm giật animation transition (250ms) khi vừa vào tab
+    const timer = setTimeout(() => {
+      loadTemplates();
+      loadCrawlLogs();
+    }, 300);
+    return () => clearTimeout(timer);
   }, []);
 
   const loadTemplates = async () => {
@@ -340,33 +345,27 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
 
               <form onSubmit={handleSend} className="space-y-4">
                 {/* Quick template selector */}
-                {templates.length > 0 && (
-                  <div className="flex flex-col gap-1.5 bg-slate-950/20 border border-white/5 p-4 rounded-xl">
-                    <label className="text-xs font-semibold text-slate-400">Chọn mẫu email soạn sẵn (Nhanh)</label>
-                    <select
-                      className="bg-slate-950/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300 cursor-pointer"
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val) {
-                          const selected = templates.find(t => t.id === val);
-                          if (selected) {
-                            setSubject(selected.subject);
-                            setBody(selected.body);
-                            showToast(`Đã áp dụng mẫu: ${selected.name}`);
-                          }
+                <div className="flex flex-col gap-1.5 bg-slate-950/20 border border-white/5 p-4 rounded-xl">
+                  <label className="text-xs font-semibold text-slate-400">Chọn mẫu email soạn sẵn (Nhanh)</label>
+                  <CustomSelect
+                    placeholder={templates.length === 0 ? "Chưa có mẫu email nào soạn sẵn" : "-- Chọn mẫu email --"}
+                    triggerClassName="bg-slate-950/60"
+                    onValueChange={(val) => {
+                      if (val) {
+                        const selected = templates.find(t => t.id === val);
+                        if (selected) {
+                          setSubject(selected.subject);
+                          setBody(selected.body);
+                          showToast(`Đã áp dụng mẫu: ${selected.name}`);
                         }
-                      }}
-                      defaultValue=""
-                    >
-                      <option value="" disabled className="bg-slate-950 text-slate-400">-- Chọn mẫu email --</option>
-                      {templates.map(t => (
-                        <option key={t.id} value={t.id} className="bg-slate-950 text-white">
-                          {t.name} (Tiêu đề: {t.subject || 'Không có'})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                      }
+                    }}
+                    options={templates.map(t => ({
+                      value: t.id,
+                      label: `${t.name} (Tiêu đề: ${t.subject || 'Không có'})`
+                    }))}
+                  />
+                </div>
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-slate-400">Tiêu đề email</label>
@@ -438,26 +437,24 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                     )}
                   </div>
                   <div className="flex gap-2 mt-1">
-                    <select
-                      className="flex-1 bg-slate-950/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300 cursor-pointer"
+                    <CustomSelect
                       value={selectedLogId}
-                      onChange={(e) => setSelectedLogId(e.target.value)}
-                    >
-                      <option value="" className="bg-slate-950 text-slate-400">-- Chọn lần cào để thêm --</option>
-                      {crawlLogs.map(log => {
+                      onValueChange={(val) => setSelectedLogId(val)}
+                      placeholder="-- Chọn lần cào để thêm --"
+                      triggerClassName="flex-1 bg-slate-950/60"
+                      options={crawlLogs.map(log => {
                         const dateStr = new Date(log.timestamp).toLocaleString('vi-VN', {
                           month: 'numeric',
                           day: 'numeric',
                           hour: 'numeric',
                           minute: 'numeric'
                         });
-                        return (
-                          <option key={log.id} value={log.id} className="bg-slate-950 text-white">
-                            {log.keyword} ({dateStr}) — {log.newLeadsCount} leads
-                          </option>
-                        );
+                        return {
+                          value: log.id,
+                          label: `${log.keyword} (${dateStr}) — ${log.newLeadsCount} leads`
+                        };
                       })}
-                    </select>
+                    />
                     <button
                       type="button"
                       onClick={() => handleSelectCrawlLog(selectedLogId)}
@@ -505,7 +502,7 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
           </div>
         </TabsContent>
 
-        <TabsContent value="templates" className="animate-scale-in">
+        <TabsContent value="templates" className="animate-fade-in">
           {editingTemplate ? (
             /* Create / Edit Template Form */
             <div className="glass-panel border border-white/5 rounded-2xl p-6 md:p-8 shadow-xl space-y-6 max-w-3xl">
