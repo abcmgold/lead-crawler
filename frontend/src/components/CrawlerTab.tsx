@@ -34,6 +34,10 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
   const [progress, setProgress] = useState(0);
   const [consoleLogs, setConsoleLogs] = useState<ConsoleLog[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyTotalCount, setHistoryTotalCount] = useState(0);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const historyPageSize = 10;
   const [showProgressCard, setShowProgressCard] = useState(false);
   const [crawlStatus, setCrawlStatus] = useState('Đang quét...');
   const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
@@ -153,8 +157,8 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
   const consoleContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    loadHistory();
-  }, []);
+    loadHistory(historyPage);
+  }, [historyPage]);
 
   useEffect(() => {
     if (consoleContainerRef.current) {
@@ -167,13 +171,17 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
     setConsoleLogs(prev => [...prev, { timestamp, message, type }]);
   };
 
-  const loadHistory = async () => {
+  const loadHistory = async (page = 1) => {
+    setHistoryLoading(true);
     try {
-      const res = await apiFetch('/api/history');
+      const res = await apiFetch(`/api/history?page=${page}&limit=${historyPageSize}`);
       const data = await res.json();
-      setHistory(data);
+      setHistory(data.logs || []);
+      setHistoryTotalCount(data.total || 0);
     } catch (err) {
       console.error(err);
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -190,7 +198,7 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
     setCrawlStatus('Đang quét...');
     setConsoleLogs([]);
 
-    addLog(`Khởi chạy Google Search với từ khóa/URL: "${keyword}"`, 'info');
+    addLog(`Khởi chạy tìm kiếm với từ khóa/URL: "${keyword}"`, 'info');
 
     // Simulate progress logs in UI
     let progressVal = 10;
@@ -240,7 +248,8 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
         addLog(`Hoàn thành. Tìm thấy tổng cộng ${leadsFound} lead mới.`, 'success');
         showToast(`Đã cào xong! Tìm thấy ${leadsFound} leads mới.`);
         onCrawlSuccess(); // reload leads list in main state
-        loadHistory();
+        loadHistory(1);
+        setHistoryPage(1);
       } else {
         throw new Error(data.error || 'Có lỗi xảy ra');
       }
@@ -260,10 +269,32 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
       const res = await apiFetch('/api/history', { method: 'DELETE' });
       const data = await res.json();
       showToast(data.message);
-      loadHistory();
+      setHistoryPage(1);
+      loadHistory(1);
     } catch (err) {
       showToast('Lỗi khi xóa lịch sử', true);
     }
+  };
+
+  const historyTotalPages = Math.max(1, Math.ceil(historyTotalCount / historyPageSize));
+  const safeHistoryPage = Math.min(historyPage, historyTotalPages);
+  const historyStartIndex = (safeHistoryPage - 1) * historyPageSize;
+
+  const goToHistoryPage = (page: number) => {
+    if (page >= 1 && page <= historyTotalPages) setHistoryPage(page);
+  };
+
+  const getHistoryPageNumbers = (): (number | 'ellipsis')[] => {
+    if (historyTotalPages <= 7) return Array.from({ length: historyTotalPages }, (_, i) => i + 1);
+    const pages: (number | 'ellipsis')[] = [];
+    if (safeHistoryPage <= 4) {
+      pages.push(1, 2, 3, 4, 5, 'ellipsis', historyTotalPages);
+    } else if (safeHistoryPage >= historyTotalPages - 3) {
+      pages.push(1, 'ellipsis', historyTotalPages - 4, historyTotalPages - 3, historyTotalPages - 2, historyTotalPages - 1, historyTotalPages);
+    } else {
+      pages.push(1, 'ellipsis', safeHistoryPage - 1, safeHistoryPage, safeHistoryPage + 1, 'ellipsis', historyTotalPages);
+    }
+    return pages;
   };
 
   return (
@@ -324,6 +355,14 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
       {/* History Card */}
       <HistoryCard
         history={history}
+        loading={historyLoading}
+        totalCount={historyTotalCount}
+        currentPage={safeHistoryPage}
+        totalPages={historyTotalPages}
+        startIndex={historyStartIndex}
+        pageSize={historyPageSize}
+        pageNumbers={getHistoryPageNumbers()}
+        onPageChange={goToHistoryPage}
         onClearHistoryClick={() => setShowClearHistoryConfirm(true)}
         onRowClick={(log) => {
           setSelectedCrawlLog(log);
@@ -560,12 +599,28 @@ const ProgressCard = React.memo(function ProgressCard({
 
 interface HistoryCardProps {
   history: HistoryItem[];
+  loading: boolean;
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
+  startIndex: number;
+  pageSize: number;
+  pageNumbers: (number | 'ellipsis')[];
+  onPageChange: (page: number) => void;
   onClearHistoryClick: () => void;
   onRowClick: (log: HistoryItem) => void;
 }
 
 const HistoryCard = React.memo(function HistoryCard({
   history,
+  loading,
+  totalCount,
+  currentPage,
+  totalPages,
+  startIndex,
+  pageSize,
+  pageNumbers,
+  onPageChange,
   onClearHistoryClick,
   onRowClick
 }: HistoryCardProps) {
@@ -588,45 +643,135 @@ const HistoryCard = React.memo(function HistoryCard({
         )}
       </div>
 
-      <DataTable
-        columns={React.useMemo<Column<HistoryItem>[]>(() => [
-          {
-            id: 'timestamp',
-            header: "Thời gian",
-            accessor: (log) => new Date(log.timestamp).toLocaleString('vi-VN'),
-            className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
-            cellClassName: "px-5 py-4 text-slate-400 font-mono",
-          },
-          {
-            id: 'keyword',
-            header: "Từ khóa / URL",
-            accessor: (log) => log.keyword,
-            className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
-            cellClassName: "px-5 py-4 font-semibold text-slate-200",
-          },
-          {
-            id: 'urlsCount',
-            header: "Số URL quét",
-            accessor: (log) => `${log.urlsCount} URLs`,
-            className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
-            cellClassName: "px-5 py-4 text-slate-400 font-mono",
-          },
-          {
-            id: 'newLeadsCount',
-            header: "Số Leads mới",
-            accessor: (log) => `+${log.newLeadsCount} Leads`,
-            className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
-            cellClassName: "px-5 py-4 text-emerald-400 font-semibold font-mono",
-          }
-        ], [])}
-        data={[...history].reverse()}
-        keyExtractor={(log) => log.id}
-        onRowClick={(log) => onRowClick(log)}
-        rowClassName="border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
-        emptyState="Chưa có lịch sử quét nào."
-        containerClassName="rounded-xl border border-white/5 overflow-hidden"
-        className="w-full text-sm text-left text-slate-300"
-      />
+      {loading ? (
+        <div className="flex items-center justify-center py-16 text-slate-500 font-mono gap-2">
+          <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          Đang tải lịch sử...
+        </div>
+      ) : (
+        <DataTable
+          columns={React.useMemo<Column<HistoryItem>[]>(() => [
+            {
+              id: 'timestamp',
+              header: "Thời gian",
+              accessor: (log) => new Date(log.timestamp).toLocaleString('vi-VN'),
+              className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
+              cellClassName: "px-5 py-4 text-slate-400 font-mono",
+            },
+            {
+              id: 'keyword',
+              header: "Từ khóa / URL",
+              accessor: (log) => log.keyword,
+              className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
+              cellClassName: "px-5 py-4 font-semibold text-slate-200",
+            },
+            {
+              id: 'urlsCount',
+              header: "Số URL quét",
+              accessor: (log) => `${log.urlsCount} URLs`,
+              className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
+              cellClassName: "px-5 py-4 text-slate-400 font-mono",
+            },
+            {
+              id: 'newLeadsCount',
+              header: "Số Leads mới",
+              accessor: (log) => `+${log.newLeadsCount} Leads`,
+              className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
+              cellClassName: "px-5 py-4 text-emerald-400 font-semibold font-mono",
+            }
+          ], [])}
+          data={history}
+          keyExtractor={(log) => log.id}
+          onRowClick={(log) => onRowClick(log)}
+          rowClassName="border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
+          emptyState="Chưa có lịch sử quét nào."
+          containerClassName="rounded-xl border border-white/5 overflow-hidden"
+          className="w-full text-sm text-left text-slate-300"
+        />
+      )}
+
+      {/* Pagination footer */}
+      {(totalPages > 1 || totalCount > 0) && !loading && (
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="text-xs text-slate-400 font-mono">
+            {totalCount > 0 && (
+              <>Hiển thị <span className="text-white font-semibold">{startIndex + 1}–{Math.min(startIndex + pageSize, totalCount)}</span> trong số <span className="text-white font-semibold">{totalCount}</span> phiên quét</>
+            )}
+          </div>
+          {totalPages > 1 && (
+            <Pagination className="w-auto mx-0">
+              <PaginationContent className="gap-0.5">
+                <PaginationItem>
+                  <PaginationLink
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); onPageChange(1); }}
+                    aria-disabled={currentPage === 1}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg border-0 transition-all text-slate-400 hover:text-white hover:bg-white/5 ${currentPage === 1 ? 'opacity-30 pointer-events-none' : ''}`}
+                    aria-label="First page"
+                  >
+                    <ChevronFirst className="w-4 h-4" />
+                  </PaginationLink>
+                </PaginationItem>
+
+                <PaginationItem>
+                  <PaginationPrevious
+                    text="Trước"
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); onPageChange(currentPage - 1); }}
+                    aria-disabled={currentPage === 1}
+                    className={`text-xs h-8 rounded-lg border-0 text-slate-400 hover:text-white hover:bg-white/5 transition-all ${currentPage === 1 ? 'opacity-30 pointer-events-none' : ''}`}
+                  />
+                </PaginationItem>
+
+                {pageNumbers.map((page, idx) =>
+                  page === 'ellipsis' ? (
+                    <PaginationItem key={`hist-ellipsis-${idx}`}>
+                      <PaginationEllipsis className="text-slate-500 w-8 h-8" />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={`hist-page-${page}`}>
+                      <PaginationLink
+                        href="#"
+                        isActive={page === currentPage}
+                        onClick={(e) => { e.preventDefault(); onPageChange(page); }}
+                        className={`w-8 h-8 text-xs rounded-lg border-0 transition-all ${
+                          page === currentPage
+                            ? 'bg-gradient-to-r from-primary to-pink-600 text-white shadow-md shadow-primary/20 font-bold border-0'
+                            : 'text-slate-400 hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                )}
+
+                <PaginationItem>
+                  <PaginationNext
+                    text="Sau"
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); onPageChange(currentPage + 1); }}
+                    aria-disabled={currentPage === totalPages}
+                    className={`text-xs h-8 rounded-lg border-0 text-slate-400 hover:text-white hover:bg-white/5 transition-all ${currentPage === totalPages ? 'opacity-30 pointer-events-none' : ''}`}
+                  />
+                </PaginationItem>
+
+                <PaginationItem>
+                  <PaginationLink
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); onPageChange(totalPages); }}
+                    aria-disabled={currentPage === totalPages}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg border-0 transition-all text-slate-400 hover:text-white hover:bg-white/5 ${currentPage === totalPages ? 'opacity-30 pointer-events-none' : ''}`}
+                    aria-label="Last page"
+                  >
+                    <ChevronLast className="w-4 h-4" />
+                  </PaginationLink>
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </div>
+      )}
     </div>
   );
 });

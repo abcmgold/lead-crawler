@@ -131,6 +131,21 @@ async function getLogs() {
   return rows.map(rowToLog);
 }
 
+async function getLogsPaginated({ page = 1, limit = 10 } = {}) {
+  const offset = (page - 1) * limit;
+  const { rows } = await pool.query(
+    'SELECT * FROM crawl_logs ORDER BY "timestamp" DESC LIMIT $1 OFFSET $2',
+    [limit, offset]
+  );
+  const countRes = await pool.query('SELECT COUNT(*) FROM crawl_logs');
+  return {
+    logs: rows.map(rowToLog),
+    total: parseInt(countRes.rows[0].count, 10),
+    page,
+    limit
+  };
+}
+
 async function addLog(log) {
   await pool.query(
     `INSERT INTO crawl_logs (id, keyword, "timestamp", urls_count, new_leads_count)
@@ -240,6 +255,7 @@ module.exports = {
   updateLeadStatus,
   clearLeads,
   getLogs,
+  getLogsPaginated,
   addLog,
   clearLogs,
   findUserByUsername,
