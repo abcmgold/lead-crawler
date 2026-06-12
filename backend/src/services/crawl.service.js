@@ -6,7 +6,8 @@ const dbRepo = require('../repositories/db.repository');
 const leadService = require('./lead.service');
 
 // Helper to parse DuckDuckGo search result links
-function parseDdgResults($, urls) {
+// `stats.raw` counts every candidate result link seen (before exact-URL dedup)
+function parseDdgResults($, urls, stats = { raw: 0 }) {
   $('a').each((i, el) => {
     let href = $(el).attr('href');
     if (!href) return;
@@ -22,8 +23,9 @@ function parseDdgResults($, urls) {
 
     if (href && href.startsWith('http') && !href.includes('duckduckgo.com') && !href.includes('google.com') && !href.includes('youtube.com') && !href.includes('facebook.com') && !href.includes('twitter.com') && !href.includes('instagram.com')) {
       try {
-        const parsed = new URL(href);
-        if (!urls.some(u => new URL(u).hostname === parsed.hostname)) {
+        new URL(href);
+        stats.raw++;
+        if (!urls.includes(href)) {
           urls.push(href);
         }
       } catch (e) { }
@@ -36,8 +38,9 @@ function parseDdgResults($, urls) {
     if (targetUrl && !targetUrl.includes('duckduckgo.com') && !targetUrl.includes('google.com') && !targetUrl.includes('youtube.com') && !targetUrl.includes('facebook.com') && !targetUrl.includes('twitter.com') && !targetUrl.includes('instagram.com')) {
       try {
         const formattedUrl = targetUrl.startsWith('http') ? targetUrl : `https://${targetUrl}`;
-        const parsed = new URL(formattedUrl);
-        if (!urls.some(u => new URL(u).hostname === parsed.hostname)) {
+        new URL(formattedUrl);
+        stats.raw++;
+        if (!urls.includes(formattedUrl)) {
           urls.push(formattedUrl);
         }
       } catch (e) { }
@@ -48,6 +51,7 @@ function parseDdgResults($, urls) {
 // Helper to search DuckDuckGo html with multi-page pagination support
 async function duckduckgoSearch(query) {
   const urls = [];
+  const stats = { raw: 0 };
   try {
     const firstUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
     let response = await axios.get(firstUrl, {
@@ -63,11 +67,13 @@ async function duckduckgoSearch(query) {
         'Upgrade-Insecure-Requests': '1'
       },
       timeout: 10000,
-      validateStatus: (status) => status === 200
+      // DDG sometimes responds with 202 (anti-bot challenge) but still includes usable results in the body,
+      // so don't discard the whole response just because the status isn't a plain 200.
+      validateStatus: (status) => status < 500
     });
 
     let $ = cheerio.load(response.data);
-    parseDdgResults($, urls);
+    parseDdgResults($, urls, stats);
 
     // Fetch subsequent pages (each gives 30 results) using POST requests mimicking the "Next" page form
     for (let page = 1; page <= 4; page++) {
@@ -99,13 +105,14 @@ async function duckduckgoSearch(query) {
         });
 
         $ = cheerio.load(response.data);
-        parseDdgResults($, urls);
+        parseDdgResults($, urls, stats);
       } catch (err) {
         logSystem(`Lỗi tải trang DDG tiếp theo: ${err.message}`, 'WARNING');
         break;
       }
     }
 
+    logSystem(`DDG: ${stats.raw} link thô tìm thấy, ${urls.length} URL duy nhất`, 'INFO');
     return urls.slice(0, 100);
   } catch (err) {
     logSystem(`DuckDuckGo search không khả dụng (bị chặn hoặc hết hạn): ${err.message}`, 'WARNING');
@@ -113,63 +120,16 @@ async function duckduckgoSearch(query) {
   }
 }
 
-// Helper to search Google via scraping
-async function googleSearch(query) {
-  try {
-    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=100`;
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': getRandomUserAgent(),
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'vi,en-US;q=0.9,en;q=0.8',
-        'Upgrade-Insecure-Requests': '1'
-      },
-      timeout: 10000
-    });
-
-    const $ = cheerio.load(response.data);
-    const urls = [];
-
-    // Parse links from Google search result page
-    $('a').each((i, el) => {
-      const href = $(el).attr('href');
-      if (!href) return;
-
-      let targetUrl = '';
-      if (href.startsWith('/url?q=')) {
-        const rawUrl = href.split('/url?q=')[1].split('&')[0];
-        targetUrl = decodeURIComponent(rawUrl);
-      } else if (href.startsWith('http')) {
-        targetUrl = href;
-      }
-
-      if (targetUrl && !targetUrl.includes('google.com') && !targetUrl.includes('youtube.com') && !targetUrl.includes('facebook.com') && !targetUrl.includes('twitter.com') && !targetUrl.includes('instagram.com')) {
-        try {
-          const parsed = new URL(targetUrl);
-          if (!urls.some(u => new URL(u).hostname === parsed.hostname)) {
-            urls.push(targetUrl);
-          }
-        } catch (e) { }
-      }
-    });
-
-    return urls.slice(0, 100);
-  } catch (err) {
-    logSystem(`Lỗi Google Search: ${err.stack || err.message}`, 'ERROR');
-    console.warn('Google blocked search request or timed out.', err.message);
-    return [];
-  }
-}
-
 // Helper to search Bing via scraping with base64 query param decoding (as a second fallback)
 async function bingSearch(query) {
   const urls = [];
+  let rawCount = 0;
   const userAgent = getRandomUserAgent();
   let nextUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
   let cookieHeader = '';
 
   for (let pageNum = 1; pageNum <= 10; pageNum++) {
-    if (!nextUrl) break;
+    if (!nextUrl || urls.length >= 100) break;
 
     try {
       const response = await axios.get(nextUrl, {
@@ -214,8 +174,9 @@ async function bingSearch(query) {
 
               if (decodedUrl && decodedUrl.startsWith('http') && !decodedUrl.includes('bing.com') && !decodedUrl.includes('microsoft.com') && !decodedUrl.includes('google.com') && !decodedUrl.includes('youtube.com') && !decodedUrl.includes('facebook.com') && !decodedUrl.includes('twitter.com') && !decodedUrl.includes('instagram.com')) {
                 try {
-                  const checkUrl = new URL(decodedUrl);
-                  if (!urls.some(u => new URL(u).hostname === checkUrl.hostname)) {
+                  new URL(decodedUrl);
+                  rawCount++;
+                  if (!urls.includes(decodedUrl)) {
                     urls.push(decodedUrl);
                     pageLinksCount++;
                   }
@@ -240,6 +201,7 @@ async function bingSearch(query) {
     }
   }
 
+  logSystem(`Bing: ${rawCount} link thô tìm thấy, ${urls.length} URL duy nhất`, 'INFO');
   return urls.slice(0, 100);
 }
 
@@ -429,38 +391,31 @@ async function performCrawl(keyword) {
     logSystem(`Phát hiện đầu vào là URL/Email. Crawl trực tiếp: ${directUrl}`, 'INFO');
     urls = [directUrl];
   } else {
-    const uniqueDomains = new Set();
     const addUrls = (newUrls) => {
       for (const url of newUrls) {
         try {
-          const parsed = new URL(url);
-          if (!uniqueDomains.has(parsed.hostname) && urls.length < 100) {
-            uniqueDomains.add(parsed.hostname);
+          new URL(url);
+          if (!urls.includes(url) && urls.length < 100) {
             urls.push(url);
           }
         } catch (e) { }
       }
     };
 
-    // 1. Try Google Search first
-    const googleUrls = await googleSearch(keyword);
-    addUrls(googleUrls);
+    // 1. Try Bing first (currently the most reliable/productive source)
+    const bingUrls = await bingSearch(keyword);
+    logSystem(`Bing trả về ${bingUrls.length} URL`, 'INFO');
+    addUrls(bingUrls);
 
-    // 2. If we need more, try DuckDuckGo (now support up to 4 pages)
+    // 2. If we need more, try DuckDuckGo (up to 4 pages)
     if (urls.length < 100) {
-      logSystem(`Google chỉ trả về ${urls.length} kết quả. Tiếp tục tìm thêm từ DuckDuckGo...`, 'INFO');
+      logSystem(`Sau Bing: ${urls.length} kết quả. Tiếp tục tìm thêm từ DuckDuckGo...`, 'INFO');
       const ddgUrls = await duckduckgoSearch(keyword);
+      logSystem(`DuckDuckGo trả về ${ddgUrls.length} URL`, 'INFO');
       addUrls(ddgUrls);
     }
 
-    // 3. If we still need more, try Bing (up to 10 pages)
-    if (urls.length < 100) {
-      logSystem(`Google + DDG chỉ trả về ${urls.length} kết quả. Tiếp tục tìm thêm từ Bing...`, 'INFO');
-      const bingUrls = await bingSearch(keyword);
-      addUrls(bingUrls);
-    }
-
-    logSystem(`Tổng số website thu thập được cho "${keyword}": ${urls.length} URLs (sau khi lọc trùng tên miền)`, 'INFO');
+    logSystem(`Tổng số website thu thập được cho "${keyword}": ${urls.length} URLs (sau khi lọc trùng URL giữa các engine)`, 'INFO');
   }
 
   if (urls.length === 0) {
@@ -502,7 +457,7 @@ async function performCrawl(keyword) {
 
 module.exports = {
   duckduckgoSearch,
-  googleSearch,
+  bingSearch,
   crawlWebsite,
   extractContacts,
   getDirectUrl,
