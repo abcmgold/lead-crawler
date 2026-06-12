@@ -12,15 +12,47 @@ async function duckduckgoSearch(query) {
     const response = await axios.get(url, {
       headers: {
         'User-Agent': getRandomUserAgent(),
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'vi,en-US;q=0.9,en;q=0.8',
+        'Referer': 'https://duckduckgo.com/',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'same-origin',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1'
       },
-      timeout: 10000
+      timeout: 10000,
+      validateStatus: (status) => status === 200 // Ensure we treat 202 Accepted (verification) as an error
     });
 
     const $ = cheerio.load(response.data);
     const urls = [];
 
-    // Parse search results links
+    // Parse search results links using direct class and redirect query params
+    $('a').each((i, el) => {
+      let href = $(el).attr('href');
+      if (!href) return;
+
+      // Extract real URL from DDG redirect parameters
+      if (href.startsWith('/l/?') || href.includes('uddg=')) {
+        try {
+          const parsedUrl = new URL(href, 'https://html.duckduckgo.com');
+          const uddg = parsedUrl.searchParams.get('uddg');
+          if (uddg) href = uddg;
+        } catch (e) {}
+      }
+
+      if (href && href.startsWith('http') && !href.includes('duckduckgo.com') && !href.includes('google.com') && !href.includes('youtube.com') && !href.includes('facebook.com') && !href.includes('twitter.com') && !href.includes('instagram.com')) {
+        try {
+          const parsed = new URL(href);
+          if (!urls.some(u => new URL(u).hostname === parsed.hostname)) {
+            urls.push(href);
+          }
+        } catch (e) {}
+      }
+    });
+
+    // Fallback: parse result__url text if standard href scraping missed it
     $('.result__url').each((i, el) => {
       const targetUrl = $(el).text().trim();
       if (targetUrl && !targetUrl.includes('duckduckgo.com') && !targetUrl.includes('google.com') && !targetUrl.includes('youtube.com') && !targetUrl.includes('facebook.com') && !targetUrl.includes('twitter.com') && !targetUrl.includes('instagram.com')) {
@@ -30,13 +62,13 @@ async function duckduckgoSearch(query) {
           if (!urls.some(u => new URL(u).hostname === parsed.hostname)) {
             urls.push(formattedUrl);
           }
-        } catch (e) { }
+        } catch (e) {}
       }
     });
 
     return urls.slice(0, 100);
   } catch (err) {
-    console.error('Lỗi DuckDuckGo search:', err.message);
+    logSystem(`DuckDuckGo search không khả dụng (bị chặn hoặc hết hạn): ${err.message}`, 'WARNING');
     return [];
   }
 }
