@@ -4,7 +4,7 @@ const { logSystem } = require('../utils/logger');
 
 async function getLeads(req, res) {
   const { page, limit, search, crawlLogId } = req.query;
-  
+
   if (page && limit) {
     const result = await dbRepo.getLeadsPaginated({
       page: parseInt(page, 10),

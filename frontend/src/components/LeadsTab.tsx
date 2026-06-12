@@ -84,15 +84,11 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
     }
   };
 
-  // Fetch data whenever pagination parameters change
+  // Fetch data whenever pagination parameters change, or new leads are crawled
+  // (CrawlerTab triggers parent leads update)
   useEffect(() => {
     fetchPaginatedLeads();
-  }, [currentPage, pageSize, searchQuery, selectedLogId]);
-
-  // Sync if new leads are crawled (CrawlerTab triggers parent leads update)
-  useEffect(() => {
-    fetchPaginatedLeads();
-  }, [leads]);
+  }, [currentPage, pageSize, searchQuery, selectedLogId, leads]);
 
   const isAllFilteredSelected = paginatedLeads.length > 0 && paginatedLeads.every(l => selectedIds.has(l.id));
 

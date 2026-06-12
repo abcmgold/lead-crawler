@@ -43,29 +43,50 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
   const [showLogLeadsModal, setShowLogLeadsModal] = useState(false);
   const [modalCurrentPage, setModalCurrentPage] = useState(1);
 
+  const [modalLeads, setModalLeads] = useState<Lead[]>([]);
+  const [modalTotalCount, setModalTotalCount] = useState(0);
+  const [modalLoading, setModalLoading] = useState(false);
+
+  const modalPageSize = 10;
+
+  useEffect(() => {
+    if (!selectedCrawlLog) {
+      setModalLeads([]);
+      setModalTotalCount(0);
+      return;
+    }
+
+    const fetchModalLeads = async () => {
+      setModalLoading(true);
+      try {
+        const queryParams = new URLSearchParams({
+          page: String(modalCurrentPage),
+          limit: String(modalPageSize),
+          crawlLogId: selectedCrawlLog.id
+        });
+        const res = await apiFetch(`/api/leads?${queryParams.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          setModalLeads(data.leads || []);
+          setModalTotalCount(data.total || 0);
+        }
+      } catch (err) {
+        console.error('Lỗi khi tải leads của phiên cào:', err);
+      } finally {
+        setModalLoading(false);
+      }
+    };
+
+    fetchModalLeads();
+  }, [selectedCrawlLog, modalCurrentPage]);
+
   useEffect(() => {
     setModalCurrentPage(1);
   }, [selectedCrawlLog]);
 
-  const matchingLeads = React.useMemo(() => {
-    if (!selectedCrawlLog) return [];
-    return leads.filter(lead => {
-      if (lead.crawlLogId === selectedCrawlLog.id) return true;
-      // Fallback matching
-      if (lead.keyword === selectedCrawlLog.keyword) {
-        const leadTime = new Date(lead.createdAt).getTime();
-        const logTime = new Date(selectedCrawlLog.timestamp).getTime();
-        return Math.abs(leadTime - logTime) < 120000; // 2 minutes
-      }
-      return false;
-    });
-  }, [leads, selectedCrawlLog]);
-
-  const modalPageSize = 10;
-  const modalTotalPages = Math.max(1, Math.ceil(matchingLeads.length / modalPageSize));
+  const modalTotalPages = Math.max(1, Math.ceil(modalTotalCount / modalPageSize));
   const safeModalPage = Math.min(modalCurrentPage, modalTotalPages);
   const modalStartIndex = (safeModalPage - 1) * modalPageSize;
-  const pagedModalLeads = matchingLeads.slice(modalStartIndex, modalStartIndex + modalPageSize);
 
   const goToModalPage = (page: number) => {
     if (page >= 1 && page <= modalTotalPages) setModalCurrentPage(page);
@@ -330,7 +351,7 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
               <div>
                 <h3 className="text-lg font-bold text-white font-sans">Kết quả cào cho: "{selectedCrawlLog.keyword}"</h3>
                 <p className="text-xs text-zinc-400 mt-1 font-mono">
-                  Thời gian: {new Date(selectedCrawlLog.timestamp).toLocaleString('vi-VN')} | Tìm thấy {matchingLeads.length} leads
+                  Thời gian: {new Date(selectedCrawlLog.timestamp).toLocaleString('vi-VN')} | Tìm thấy {modalTotalCount} leads
                 </p>
               </div>
               <Button
@@ -345,14 +366,19 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
 
             {/* Modal Content */}
             <div className="flex-1 overflow-y-auto p-6">
-              {matchingLeads.length === 0 ? (
+              {modalLoading ? (
+                <div className="flex items-center justify-center py-20 text-slate-500 font-mono gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  Đang tải dữ liệu...
+                </div>
+              ) : modalLeads.length === 0 ? (
                 <div className="text-center py-12 text-slate-500 font-mono">
                   Không tìm thấy lead nào thuộc phiên cào này hoặc đã bị xóa.
                 </div>
               ) : (
                 <DataTable
                   columns={modalColumns}
-                  data={pagedModalLeads}
+                  data={modalLeads}
                   keyExtractor={(lead) => lead.id}
                   emptyState="Không tìm thấy lead nào thuộc phiên cào này hoặc đã bị xóa."
                   className="w-full text-sm text-left text-slate-300"
@@ -363,15 +389,15 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
             {/* Modal Footer */}
             <div className="p-4 bg-slate-950/20 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
               <div className="text-xs text-slate-400 font-mono">
-                {matchingLeads.length > 0 && (
+                {modalTotalCount > 0 && !modalLoading && (
                   <>
-                    Hiển thị <span className="text-white font-semibold">{modalStartIndex + 1}–{Math.min(modalStartIndex + modalPageSize, matchingLeads.length)}</span> trong số <span className="text-white font-semibold">{matchingLeads.length}</span> leads
+                    Hiển thị <span className="text-white font-semibold">{modalStartIndex + 1}–{Math.min(modalStartIndex + modalPageSize, modalTotalCount)}</span> trong số <span className="text-white font-semibold">{modalTotalCount}</span> leads
                   </>
                 )}
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-4">
-                {modalTotalPages > 1 && (
+                {modalTotalPages > 1 && !modalLoading && (
                   <Pagination className="w-auto mx-0">
                     <PaginationContent className="gap-0.5">
                       <PaginationItem>
