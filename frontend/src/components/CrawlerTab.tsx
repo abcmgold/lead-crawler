@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import ConfirmDialog from './ConfirmDialog';
 import CrawlLeadsModal from './CrawlLeadsModal';
 import { DataTable, Column } from '@/components/ui/data-table';
+import { Input } from '@/components/ui/input';
 
 interface CrawlerTabProps {
   onCrawlSuccess: () => void;
@@ -231,10 +232,9 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
           </p>
           <form onSubmit={handleCrawl} className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <input
+              <Input
                 type="text"
-                className="w-full bg-slate-950/40 border border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 rounded-xl px-5 py-4 text-white text-base placeholder-slate-500 focus:outline-none transition-all duration-300 font-mono"
-                placeholder="Nhập từ khóa hoặc domain (ví dụ: audiostory.com)..."
+                placeholder="Nhập từ khóa hoặc domain..."
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 disabled={isCrawling}
@@ -244,7 +244,7 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
               type="submit"
               variant="gradient"
               size="xl"
-              className="shrink-0 h-auto"
+              className="shrink-0"
               disabled={isCrawling}
             >
               {isCrawling ? (

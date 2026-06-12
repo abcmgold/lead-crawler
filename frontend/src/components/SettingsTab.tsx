@@ -4,15 +4,13 @@ import { SmtpSettings } from './types';
 import { apiFetch } from '@/lib/api';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
 
 interface SettingsTabProps {
   smtpSettings: SmtpSettings;
   onSettingsUpdated: (settings: SmtpSettings) => void;
   showToast: (message: string, isError?: boolean) => void;
 }
-
-const inputClass =
-  'bg-slate-950/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 font-mono focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300';
 
 export default function SettingsTab({ smtpSettings, onSettingsUpdated, showToast }: SettingsTabProps) {
   return (
@@ -51,15 +49,15 @@ export default function SettingsTab({ smtpSettings, onSettingsUpdated, showToast
 }
 
 function SmtpSettingsForm({ smtpSettings, onSettingsUpdated, showToast }: SettingsTabProps) {
-  const [form, setForm] = useState<SmtpSettings>(smtpSettings);
+  const [form, setForm] = useState<SmtpSettings>({ ...smtpSettings });
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    setForm(smtpSettings);
+    setForm({ ...smtpSettings });
   }, [smtpSettings]);
 
-  const updateField = (field: keyof SmtpSettings, value: string | boolean) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+  const updateField = (key: keyof SmtpSettings, val: any) => {
+    setForm((prev) => ({ ...prev, [key]: val }));
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -106,9 +104,9 @@ function SmtpSettingsForm({ smtpSettings, onSettingsUpdated, showToast }: Settin
               <Server className="w-3.5 h-3.5 text-primary" />
               SMTP Host
             </label>
-            <input
+            <Input
               type="text"
-              className={inputClass}
+              className="font-mono"
               placeholder="smtp.gmail.com"
               value={form.host || ''}
               onChange={(e) => updateField('host', e.target.value)}
@@ -120,9 +118,9 @@ function SmtpSettingsForm({ smtpSettings, onSettingsUpdated, showToast }: Settin
               <Hash className="w-3.5 h-3.5 text-primary" />
               SMTP Port
             </label>
-            <input
+            <Input
               type="text"
-              className={inputClass}
+              className="font-mono"
               placeholder="587"
               value={form.port || ''}
               onChange={(e) => updateField('port', e.target.value)}
@@ -137,9 +135,9 @@ function SmtpSettingsForm({ smtpSettings, onSettingsUpdated, showToast }: Settin
               <Mail className="w-3.5 h-3.5 text-primary" />
               Email / Username đăng nhập
             </label>
-            <input
+            <Input
               type="text"
-              className={inputClass}
+              className="font-mono"
               placeholder="user@example.com"
               value={form.user || ''}
               onChange={(e) => updateField('user', e.target.value)}
@@ -151,9 +149,9 @@ function SmtpSettingsForm({ smtpSettings, onSettingsUpdated, showToast }: Settin
               <Key className="w-3.5 h-3.5 text-primary" />
               Mật khẩu ứng dụng / SMTP Key
             </label>
-            <input
+            <Input
               type="password"
-              className={inputClass}
+              className="font-mono"
               placeholder="********"
               value={form.pass || ''}
               onChange={(e) => updateField('pass', e.target.value)}
@@ -168,9 +166,9 @@ function SmtpSettingsForm({ smtpSettings, onSettingsUpdated, showToast }: Settin
               <UserCheck className="w-3.5 h-3.5 text-primary" />
               Tên người gửi hiển thị (Sender Display Name)
             </label>
-            <input
+            <Input
               type="text"
-              className={inputClass}
+              className="font-mono"
               placeholder="Công ty ABC"
               value={form.senderName || ''}
               onChange={(e) => updateField('senderName', e.target.value)}
@@ -182,9 +180,9 @@ function SmtpSettingsForm({ smtpSettings, onSettingsUpdated, showToast }: Settin
               <Mail className="w-3.5 h-3.5 text-primary" />
               Email người gửi thực tế (Sender Email)
             </label>
-            <input
+            <Input
               type="text"
-              className={inputClass}
+              className="font-mono"
               placeholder="sender@example.com"
               value={form.senderEmail || ''}
               onChange={(e) => updateField('senderEmail', e.target.value)}
@@ -211,7 +209,7 @@ function SmtpSettingsForm({ smtpSettings, onSettingsUpdated, showToast }: Settin
           type="submit"
           variant="gradient"
           size="md-xl"
-          className="w-full md:w-auto h-auto"
+          className="w-full md:w-auto"
           disabled={isSaving}
         >
           {isSaving ? (
@@ -292,9 +290,9 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
       <div className="space-y-5 max-w-2xl">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-400">Mật khẩu hiện tại</label>
-          <input
+          <Input
             type="password"
-            className={inputClass}
+            className="font-mono"
             value={oldPassword}
             onChange={(e) => setOldPassword(e.target.value)}
             disabled={isSaving}
@@ -304,9 +302,9 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-slate-400">Mật khẩu mới</label>
-            <input
+            <Input
               type="password"
-              className={inputClass}
+              className="font-mono"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               disabled={isSaving}
@@ -314,9 +312,9 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-slate-400">Xác nhận mật khẩu mới</label>
-            <input
+            <Input
               type="password"
-              className={inputClass}
+              className="font-mono"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={isSaving}
@@ -328,7 +326,7 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
           type="submit"
           variant="gradient"
           size="md-xl"
-          className="w-full md:w-auto h-auto"
+          className="w-full md:w-auto"
           disabled={isSaving}
         >
           {isSaving ? (
@@ -466,11 +464,10 @@ function ThemeSelectorForm({ showToast }: { showToast: (message: string, isError
                 key={m.id}
                 type="button"
                 onClick={() => handleSelectMode(m.id)}
-                className={`p-4 rounded-2xl flex items-start gap-4 transition-all duration-300 cursor-pointer select-none text-left ${
-                  isSelected
-                    ? 'bg-white/[0.06] border border-primary/40 shadow-[0_8px_30px_rgb(0,0,0,0.3)]'
-                    : 'bg-slate-950/20 border border-white/5 hover:border-white/10 hover:bg-white/[0.02]'
-                }`}
+                className={`p-4 rounded-2xl flex items-start gap-4 transition-all duration-300 cursor-pointer select-none text-left ${isSelected
+                  ? 'bg-white/[0.06] border border-primary/40 shadow-[0_8px_30px_rgb(0,0,0,0.3)]'
+                  : 'bg-slate-950/20 border border-white/5 hover:border-white/10 hover:bg-white/[0.02]'
+                  }`}
               >
                 {/* Mini Preview Box */}
                 <div className={`w-10 h-10 rounded-xl shrink-0 border flex items-center justify-center relative ${m.previewClass}`}>
@@ -498,17 +495,16 @@ function ThemeSelectorForm({ showToast }: { showToast: (message: string, isError
                 key={c.id}
                 type="button"
                 onClick={() => handleSelectColor(c.id)}
-                className={`p-4 rounded-2xl flex items-center gap-3.5 transition-all duration-300 cursor-pointer select-none text-left ${
-                  isSelected
-                    ? 'bg-white/[0.06] border border-primary/40 shadow-[0_8px_30px_rgb(0,0,0,0.3)]'
-                    : 'bg-slate-950/20 border border-white/5 hover:border-white/10 hover:bg-white/[0.02]'
-                }`}
+                className={`p-4 rounded-2xl flex items-center gap-3.5 transition-all duration-300 cursor-pointer select-none text-left ${isSelected
+                  ? 'bg-white/[0.06] border border-primary/40 shadow-[0_8px_30px_rgb(0,0,0,0.3)]'
+                  : 'bg-slate-950/20 border border-white/5 hover:border-white/10 hover:bg-white/[0.02]'
+                  }`}
               >
                 {/* Color Dot Preview */}
                 <div
                   className="w-8 h-8 rounded-full shrink-0 border border-white/10 flex items-center justify-center relative overflow-hidden"
                   style={{
-                    background: themeMode === 'light' 
+                    background: themeMode === 'light'
                       ? c.gradientFrom // Flat solid look on light mode button previews
                       : `linear-gradient(135deg, ${c.gradientFrom}, ${c.gradientTo})`
                   }}

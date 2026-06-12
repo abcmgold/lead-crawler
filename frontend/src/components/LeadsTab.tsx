@@ -14,6 +14,7 @@ import {
 import { DataTable, Column } from '@/components/ui/data-table';
 import { CustomSelect } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface LeadsTabProps {
   leads: Lead[];
@@ -287,9 +288,9 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
             <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
               <Search className="w-5 h-5" />
             </span>
-            <input
+            <Input
               type="text"
-              className="w-full bg-slate-950/40 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300 placeholder-slate-500 font-sans"
+              className="pl-11"
               placeholder="Lọc theo Tên, Email, Số điện thoại..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -330,7 +331,6 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
             variant="outline"
             size="md-xl"
             onClick={handleExportCSV}
-            className="h-auto"
           >
             <Download className="w-4 h-4" />
             Xuất CSV

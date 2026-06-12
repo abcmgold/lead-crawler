@@ -485,3 +485,10 @@ body[data-scroll-locked] {
   height: auto;
   border-radius: 0.5rem;
 }
+
+/* Force input placeholders to truncate with ellipsis when overflowing */
+input::placeholder {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}

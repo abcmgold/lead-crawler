@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import ConfirmDialog from './ConfirmDialog';
 import { CustomSelect } from './ui/select';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
 
 interface CampaignTabProps {
   allLeads: Lead[];
@@ -370,9 +371,8 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-slate-400">Tiêu đề email</label>
-                  <input
+                  <Input
                     type="text"
-                    className="bg-slate-950/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300 placeholder-slate-600"
                     placeholder="Giới thiệu sản phẩm dịch vụ hoặc hợp tác..."
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
@@ -526,9 +526,8 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
               <form onSubmit={handleSaveTemplate} className="space-y-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-slate-400">Tên mẫu email (quản lý nội bộ)</label>
-                  <input
+                  <Input
                     type="text"
-                    className="bg-slate-950/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300 placeholder-slate-600"
                     placeholder="Ví dụ: Mẫu chào hàng đầu tuần, Mẫu follow up..."
                     value={tplName}
                     onChange={(e) => setTplName(e.target.value)}
@@ -539,9 +538,8 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-slate-400">Tiêu đề thư gửi khách hàng (Subject)</label>
-                  <input
+                  <Input
                     type="text"
-                    className="bg-slate-950/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all duration-300 placeholder-slate-600"
                     placeholder="Tiêu đề email mẫu..."
                     value={tplSubject}
                     onChange={(e) => setTplSubject(e.target.value)}
@@ -606,7 +604,6 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
                   onClick={handleCreateNewClick}
                   variant="gradient"
                   size="sm-xl"
-                  className="h-auto"
                 >
                   <Plus className="w-4 h-4" />
                   Tạo mẫu mới
