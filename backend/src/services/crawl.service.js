@@ -472,13 +472,17 @@ async function performCrawl(keyword) {
   const results = [];
   let newLeadsCount = 0;
 
+  // Retrieve all existing emails in the database before starting the crawl session
+  const existingEmails = new Set((await dbRepo.getLeads()).map(l => l.email.toLowerCase()));
+  const addedInSession = new Set();
+
   for (const url of urls) {
     const crawled = await crawlWebsite(url);
     results.push(crawled);
     logSystem(`Crawl website: ${url} | Trạng thái: ${crawled.status} | Emails tìm thấy: ${crawled.emails.length}`, 'INFO');
 
     if (crawled.status === 'success') {
-      newLeadsCount += await leadService.addLeadsFromCrawl(crawled, keyword, logId);
+      newLeadsCount += await leadService.addLeadsFromCrawl(crawled, keyword, logId, existingEmails, addedInSession);
     }
   }
 

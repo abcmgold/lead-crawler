@@ -24,17 +24,24 @@ async function cleanPhones() {
 }
 
 // Persist new leads (deduped by email) found from a crawl result. Returns how many were added.
-async function addLeadsFromCrawl(crawled, keyword, crawlLogId) {
+async function addLeadsFromCrawl(crawled, keyword, crawlLogId, existingEmails = new Set(), addedInSession = new Set()) {
   let newLeadsCount = 0;
 
   for (const email of crawled.emails) {
-    const existing = await dbRepo.findLeadByEmail(email);
+    const emailLower = email.toLowerCase().trim();
+    const isExisting = existingEmails.has(emailLower);
+    const isAlreadyAdded = addedInSession.has(emailLower);
     const uniquePhones = [...new Set(crawled.phones)].slice(0, 2);
+
+    let existing = null;
+    if (isExisting) {
+      existing = await dbRepo.findLeadByEmail(emailLower);
+    }
 
     await dbRepo.insertLead({
       id: existing ? existing.id : '_' + Math.random().toString(36).substr(2, 9),
       name: crawled.title || (existing ? existing.name : ''),
-      email,
+      email: emailLower,
       phone: uniquePhones.length > 0 ? uniquePhones.join(', ') : (existing ? existing.phone : ''),
       website: crawled.url || (existing ? existing.website : ''),
       keyword: existing ? existing.keyword : keyword,
@@ -43,7 +50,8 @@ async function addLeadsFromCrawl(crawled, keyword, crawlLogId) {
       crawlLogId: existing ? existing.crawlLogId : crawlLogId
     });
 
-    if (!existing) {
+    if (!isExisting && !isAlreadyAdded) {
+      addedInSession.add(emailLower);
       newLeadsCount++;
     }
   }
