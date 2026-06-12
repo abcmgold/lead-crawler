@@ -10,7 +10,7 @@ function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimi
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        "inline-flex items-center gap-1.5 bg-slate-950/40 p-1.5 rounded-xl border border-white/5",
+        "inline-flex items-center gap-1.5 bg-secondary/40 p-1.5 rounded-xl border border-border",
         className
       )}
       {...props}
@@ -23,7 +23,7 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 cursor-pointer text-slate-400 hover:text-slate-100 hover:bg-white/[0.03] data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-pink-600 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20",
+        "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-secondary/60 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-pink-600 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20",
         className
       )}
       {...props}

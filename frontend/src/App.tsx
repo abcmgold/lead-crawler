@@ -25,6 +25,16 @@ export default function App() {
   const [toast, setToast] = useState({ show: false, message: '', isError: false });
 
   useEffect(() => {
+    const mode = localStorage.getItem('leadcrawler-theme-mode') || 'dark';
+    const color = localStorage.getItem('leadcrawler-theme-color') || 'rose';
+    document.documentElement.className = '';
+    document.documentElement.classList.add(mode);
+    if (color !== 'rose') {
+      document.documentElement.classList.add(`color-${color}`);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!user) return;
     loadLeads();
     loadSettings();
@@ -107,10 +117,10 @@ export default function App() {
   const activeNavClass =
     'bg-gradient-to-r from-primary to-pink-600 text-primary-foreground shadow-lg shadow-primary/20';
   const inactiveNavClass =
-    'text-slate-400 hover:text-slate-100 hover:bg-white/[0.03]';
+    'text-muted-foreground hover:text-foreground hover:bg-secondary/60';
 
   return (
-    <div className="min-h-screen bg-background text-slate-100 font-sans antialiased relative flex flex-col">
+    <div className="min-h-screen bg-background text-foreground font-sans antialiased relative flex flex-col">
 
       {/* Decorative Blur Background Orbs */}
       <div className="fixed top-[-20%] left-[20%] w-[800px] h-[800px] bg-primary/10 blur-[150px] rounded-full pointer-events-none z-0" />
@@ -128,7 +138,7 @@ export default function App() {
             <div className="flex items-center gap-2 sm:gap-3 select-none">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden flex items-center justify-center w-9 h-9 shrink-0 bg-slate-950/60 border border-white/10 rounded-xl text-slate-300 hover:text-white transition-colors duration-300 cursor-pointer select-none"
+                className="md:hidden flex items-center justify-center w-9 h-9 shrink-0 bg-secondary/60 border border-border rounded-xl text-muted-foreground hover:text-foreground transition-colors duration-300 cursor-pointer select-none"
               >
                 {mobileMenuOpen ? <X className="w-4.5 h-4.5" /> : <Menu className="w-4.5 h-4.5" />}
               </button>
@@ -139,7 +149,7 @@ export default function App() {
             </div>
 
             {/* Navigation pills in the center */}
-            <nav className="hidden md:flex items-center gap-1.5 bg-slate-950/40 p-1.5 rounded-xl border border-white/5 relative">
+            <nav className="hidden md:flex items-center gap-1.5 bg-secondary/40 p-1.5 rounded-xl border border-border relative">
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -160,14 +170,14 @@ export default function App() {
 
             {/* Status indicators */}
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden lg:flex items-center gap-2 bg-slate-950/60 border border-white/10 px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 font-mono shadow-inner select-none">
+              <div className="hidden lg:flex items-center gap-2 bg-secondary/60 border border-border px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground font-mono shadow-inner select-none">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 SMTP: {smtpSettings.host ? 'OK' : 'CHƯA CẤU HÌNH'}
               </div>
               <button
                 onClick={() => setShowLogoutConfirm(true)}
                 title={`Đăng xuất (${user.username})`}
-                className="flex items-center justify-center w-9 h-9 shrink-0 bg-slate-950/60 border border-white/10 rounded-xl text-slate-300 hover:text-rose-300 hover:border-rose-500/30 transition-colors duration-300 cursor-pointer select-none"
+                className="flex items-center justify-center w-9 h-9 shrink-0 bg-secondary/60 border border-border rounded-xl text-muted-foreground hover:text-rose-400 transition-colors duration-300 cursor-pointer select-none"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -311,14 +321,14 @@ export default function App() {
 
       {/* Notification Toast */}
       {toast.show && (
-        <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-8 sm:bottom-8 sm:max-w-sm border rounded-2xl shadow-2xl p-4 flex items-center gap-3 z-50 animate-scale-in bg-slate-950/90 backdrop-blur-md ${toast.isError ? 'border-destructive text-rose-200' : 'border-primary text-pink-200'
+        <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-8 sm:bottom-8 sm:max-w-sm border rounded-2xl shadow-2xl p-4 flex items-center gap-3 z-50 animate-scale-in bg-slate-950/90 backdrop-blur-md ${toast.isError ? 'border-destructive' : 'border-primary'
           }`}>
           {toast.isError ? (
             <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
           ) : (
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
           )}
-          <span className="text-sm font-semibold font-sans">{toast.message}</span>
+          <span className="text-sm font-semibold font-sans text-foreground">{toast.message}</span>
         </div>
       )}
 

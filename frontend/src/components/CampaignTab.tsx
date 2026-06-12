@@ -751,23 +751,23 @@ const CampaignLogs = React.memo(function CampaignLogs({
           </div>
         )}
 
-        <div className="bg-slate-950/80 border border-white/5 rounded-xl p-4 h-[280px] lg:h-[420px] overflow-y-auto font-mono text-xs text-sky-400 space-y-1.5 scrollbar-thin flex-1 font-sans">
+        <div className="bg-console-bg border border-console-border rounded-xl p-4 h-[280px] lg:h-[420px] overflow-y-auto font-mono text-xs text-console-text-info space-y-1.5 scrollbar-thin flex-1 font-sans">
           {logs.length === 0 ? (
-            <div className="text-slate-600 font-mono py-8 text-center">Chưa khởi tạo chiến dịch gửi email nào.</div>
+            <div className="text-console-text-time font-mono py-8 text-center">Chưa khởi tạo chiến dịch gửi email nào.</div>
           ) : (
             <div className="font-mono space-y-1.5">
               {logs.map((log, idx) => {
-                let logClass = 'text-sky-400';
-                let borderClass = 'border-sky-500/20';
+                let logClass = 'text-console-text-info';
+                let borderClass = 'border-console-border-info';
                 if (log.includes('[Thành công]')) {
-                  logClass = 'text-emerald-400';
-                  borderClass = 'border-emerald-500/40';
+                  logClass = 'text-console-text-success';
+                  borderClass = 'border-console-border-success';
                 } else if (log.includes('[Thất bại]') || log.includes('[ERROR]')) {
-                  logClass = 'text-rose-400';
-                  borderClass = 'border-rose-500/40';
+                  logClass = 'text-console-text-error';
+                  borderClass = 'border-console-border-error';
                 } else if (log.includes('[INFO]')) {
-                  logClass = 'text-slate-400';
-                  borderClass = 'border-white/5';
+                  logClass = 'text-console-text-time';
+                  borderClass = 'border-console-border';
                 }
 
                 return (

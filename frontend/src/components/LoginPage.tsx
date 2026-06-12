@@ -36,7 +36,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-background text-slate-100 font-sans antialiased relative flex items-center justify-center px-4">
+    <div className="min-h-screen w-full bg-background text-foreground font-sans antialiased relative flex items-center justify-center px-4">
 
       {/* Decorative Blur Background Orbs */}
       <div className="fixed top-[-20%] left-[20%] w-[800px] h-[800px] bg-primary/10 blur-[150px] rounded-full pointer-events-none z-0" />

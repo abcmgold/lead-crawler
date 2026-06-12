@@ -513,18 +513,17 @@ const ProgressCard = React.memo(function ProgressCard({
         />
       </div>
 
-      {/* Console Output */}
       <div
         ref={consoleContainerRef}
-        className="bg-slate-950/80 border border-white/5 rounded-xl p-4 h-48 sm:h-64 overflow-y-auto font-mono text-xs text-sky-400 space-y-1.5 scrollbar-thin"
+        className="bg-console-bg border border-console-border rounded-xl p-4 h-48 sm:h-64 overflow-y-auto font-mono text-xs text-console-text-info space-y-1.5 scrollbar-thin"
       >
         {consoleLogs.map((log, idx) => (
-          <div key={idx} className={`leading-relaxed border-l-2 pl-2 ${log.type === 'success' ? 'text-emerald-400 border-emerald-500/40' :
-            log.type === 'error' ? 'text-rose-400 border-rose-500/40' :
-              log.type === 'warning' ? 'text-amber-400 border-amber-500/40' :
-                'text-sky-400 border-sky-500/20'
+          <div key={idx} className={`leading-relaxed border-l-2 pl-2 ${log.type === 'success' ? 'text-console-text-success border-console-border-success' :
+            log.type === 'error' ? 'text-console-text-error border-console-border-error' :
+              log.type === 'warning' ? 'text-console-text-warning border-console-border-warning' :
+                'text-console-text-info border-console-border-info'
             }`}>
-            <span className="text-slate-500 mr-2">[{log.timestamp}]</span>
+            <span className="text-console-text-time mr-2">[{log.timestamp}]</span>
             {log.message}
           </div>
         ))}

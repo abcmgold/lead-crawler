@@ -4,7 +4,7 @@
 
 :root {
   color-scheme: dark;
-  /* Quantum Rose Dark Theme Variables (Oklch) */
+  /* Quantum Rose Dark Theme Variables (Oklch) - Default */
   --background: oklch(0.1208 0.0335 313.7159);
   --foreground: oklch(0.9224 0.0807 326.6356);
   --card: oklch(0.1698 0.0461 313.2337);
@@ -25,6 +25,239 @@
   --input: oklch(0.2384 0.0715 319.6465);
   --ring: oklch(0.7043 0.2019 332.0212);
   --radius: 0.75rem;
+
+  /* Theme-specific custom variables */
+  --primary-hover: oklch(0.75 0.22 332.02);
+  --primary-gradient-to: oklch(0.65 0.22 350);
+  --glow-color: oklch(0.7043 0.2019 332.0212 / 0.4);
+  --glass-border: oklch(0.7043 0.2019 332.0212 / 0.1);
+  --glass-border-hover: oklch(0.7043 0.2019 332.0212 / 0.3);
+  --glass-bg: rgba(25, 15, 30, 0.45);
+  --glass-bg-interactive: rgba(25, 15, 30, 0.35);
+  --glass-bg-hover: rgba(25, 15, 30, 0.5);
+  --bg-glow-1: oklch(0.25 0.12 332.02 / 0.25);
+  --bg-glow-2: oklch(0.20 0.10 320 / 0.12);
+  --bg-glow-3: oklch(0.30 0.15 340 / 0.08);
+
+  /* Dynamic Slate/White Colors default values (Dark Mode) */
+  --white: #ffffff;
+  --slate-50: oklch(0.98 0.005 240);
+  --slate-100: oklch(0.96 0.01 240);
+  --slate-200: oklch(0.92 0.01 240);
+  --slate-300: oklch(0.87 0.01 240);
+  --slate-400: oklch(0.70 0.02 240);
+  --slate-500: oklch(0.55 0.02 240);
+  --slate-600: oklch(0.40 0.02 240);
+  --slate-700: oklch(0.30 0.02 240);
+  --slate-800: oklch(0.20 0.02 240);
+  --slate-900: oklch(0.15 0.02 240);
+  --slate-950: oklch(0.10 0.02 240);
+
+  /* Console Specific Colors (Dark Mode Default) */
+  --console-bg: oklch(0.10 0.02 240 / 0.8);
+  --console-border: oklch(0.92 0.01 240 / 0.05);
+  --console-text-info: oklch(0.75 0.12 240);
+  --console-border-info: oklch(0.75 0.12 240 / 0.2);
+  --console-text-success: oklch(0.75 0.15 150);
+  --console-border-success: oklch(0.75 0.15 150 / 0.4);
+  --console-text-error: oklch(0.70 0.18 20);
+  --console-border-error: oklch(0.70 0.18 20 / 0.4);
+  --console-text-warning: oklch(0.75 0.15 75);
+  --console-border-warning: oklch(0.75 0.15 75 / 0.4);
+  --console-text-time: oklch(0.55 0.02 240);
+}
+
+/* ================= DARK MODE COLOR OVERRIDES ================= */
+.dark.color-emerald {
+  --primary: oklch(0.75 0.16 150);
+  --primary-hover: oklch(0.80 0.18 150);
+  --primary-gradient-to: oklch(0.68 0.18 175);
+  --glow-color: oklch(0.75 0.16 150 / 0.4);
+  --glass-border: oklch(0.75 0.16 150 / 0.1);
+  --glass-border-hover: oklch(0.75 0.16 150 / 0.3);
+  --glass-bg: rgba(15, 25, 20, 0.45);
+  --glass-bg-interactive: rgba(15, 25, 20, 0.35);
+  --glass-bg-hover: rgba(15, 25, 20, 0.5);
+  --bg-glow-1: oklch(0.25 0.10 150 / 0.25);
+  --bg-glow-2: oklch(0.20 0.08 175 / 0.12);
+  --bg-glow-3: oklch(0.30 0.12 160 / 0.08);
+}
+
+.dark.color-blue {
+  --primary: oklch(0.68 0.18 240);
+  --primary-hover: oklch(0.74 0.20 240);
+  --primary-gradient-to: oklch(0.62 0.20 270);
+  --glow-color: oklch(0.68 0.18 240 / 0.4);
+  --glass-border: oklch(0.68 0.18 240 / 0.1);
+  --glass-border-hover: oklch(0.68 0.18 240 / 0.3);
+  --glass-bg: rgba(15, 20, 30, 0.45);
+  --glass-bg-interactive: rgba(15, 20, 30, 0.35);
+  --glass-bg-hover: rgba(15, 20, 30, 0.5);
+  --bg-glow-1: oklch(0.25 0.12 240 / 0.25);
+  --bg-glow-2: oklch(0.20 0.10 270 / 0.12);
+  --bg-glow-3: oklch(0.30 0.14 255 / 0.08);
+}
+
+.dark.color-amber {
+  --primary: oklch(0.76 0.15 75);
+  --primary-hover: oklch(0.81 0.17 75);
+  --primary-gradient-to: oklch(0.68 0.18 45);
+  --glow-color: oklch(0.76 0.15 75 / 0.4);
+  --glass-border: oklch(0.76 0.15 75 / 0.1);
+  --glass-border-hover: oklch(0.76 0.15 75 / 0.3);
+  --glass-bg: rgba(30, 25, 15, 0.45);
+  --glass-bg-interactive: rgba(30, 25, 15, 0.35);
+  --glass-bg-hover: rgba(30, 25, 15, 0.5);
+  --bg-glow-1: oklch(0.25 0.10 75 / 0.25);
+  --bg-glow-2: oklch(0.20 0.08 45 / 0.12);
+  --bg-glow-3: oklch(0.30 0.12 60 / 0.08);
+}
+
+.dark.color-violet {
+  --primary: oklch(0.70 0.18 290);
+  --primary-hover: oklch(0.76 0.20 290);
+  --primary-gradient-to: oklch(0.64 0.21 315);
+  --glow-color: oklch(0.70 0.18 290 / 0.4);
+  --glass-border: oklch(0.70 0.18 290 / 0.1);
+  --glass-border-hover: oklch(0.70 0.18 290 / 0.3);
+  --glass-bg: rgba(25, 15, 30, 0.45);
+  --glass-bg-interactive: rgba(25, 15, 30, 0.35);
+  --glass-bg-hover: rgba(25, 15, 30, 0.5);
+  --bg-glow-1: oklch(0.25 0.12 290 / 0.25);
+  --bg-glow-2: oklch(0.20 0.10 315 / 0.12);
+  --bg-glow-3: oklch(0.30 0.14 300 / 0.08);
+}
+
+.dark.color-mocha {
+  --primary: oklch(0.7272 0.0539 52.3320);
+  --primary-hover: oklch(0.78 0.05 52.33);
+  --primary-gradient-to: oklch(0.6083 0.0623 44.3588);
+  --glow-color: oklch(0.7272 0.0539 52.3320 / 0.4);
+  --glass-border: oklch(0.7272 0.0539 52.3320 / 0.1);
+  --glass-border-hover: oklch(0.7272 0.0539 52.3320 / 0.3);
+  --glass-bg: rgba(35, 30, 25, 0.45);
+  --glass-bg-interactive: rgba(35, 30, 25, 0.35);
+  --glass-bg-hover: rgba(35, 30, 25, 0.5);
+  --bg-glow-1: oklch(0.25 0.05 52 / 0.25);
+  --bg-glow-2: oklch(0.20 0.04 44 / 0.12);
+  --bg-glow-3: oklch(0.30 0.06 48 / 0.08);
+
+  /* Mocha specific dark overrides */
+  --background: oklch(0.2721 0.0141 48.1783);
+  --foreground: oklch(0.9529 0.0146 102.4597);
+  --card: oklch(0.3291 0.0156 50.8936);
+  --card-foreground: oklch(0.9529 0.0146 102.4597);
+  --border: oklch(0.4063 0.0255 40.3627);
+  --secondary: oklch(0.5416 0.0512 37.2132);
+}
+
+/* ================= LIGHT MODE VARIABLES ================= */
+.light {
+  color-scheme: light;
+  --background: oklch(0.98 0.01 240); /* Light slate-50 background */
+  --foreground: oklch(0.12 0.02 240); /* Dark slate-900 text */
+  --card: oklch(1 0 0); /* White card */
+  --card-foreground: oklch(0.12 0.02 240);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.12 0.02 240);
+  --primary: oklch(0.60 0.18 330); /* Light Mode Rose primary */
+  --primary-foreground: oklch(1 0 0); /* White text on primary */
+  --secondary: oklch(0.94 0.01 240); /* Slate-100 */
+  --secondary-foreground: oklch(0.12 0.02 240);
+  --muted: oklch(0.95 0.01 240);
+  --muted-foreground: oklch(0.45 0.02 240); /* Slate-500 */
+  --accent: oklch(0.92 0.02 240);
+  --accent-foreground: oklch(0.12 0.02 240);
+  --destructive: oklch(0.60 0.20 20);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.88 0.01 240); /* Slate-200 border */
+  --input: oklch(0.94 0.01 240);
+  --ring: oklch(0.60 0.18 330);
+  
+  /* Flat layout variables (no gradients, glows, or background orbs) */
+  --primary-hover: oklch(0.52 0.18 330);
+  --primary-gradient-to: var(--primary); /* Force same color to disable gradient */
+  --glow-color: transparent; /* No text/box glow */
+  --glass-border: oklch(0.88 0.01 240); /* Flat light border */
+  --glass-border-hover: oklch(0.78 0.02 240);
+  --glass-bg: oklch(1 0 0); /* Solid white instead of semi-transparent glass */
+  --glass-bg-interactive: oklch(0.99 0.005 240);
+  --glass-bg-hover: oklch(0.96 0.01 240);
+  
+  --bg-glow-1: transparent; /* Turn off dark background orbs */
+  --bg-glow-2: transparent;
+  --bg-glow-3: transparent;
+
+  /* Inverted dynamic slate & white colors for Light Mode */
+  --white: oklch(0.12 0.02 240); /* slate-900 */
+  --slate-50: oklch(0.12 0.02 240);   /* slate-900 */
+  --slate-100: oklch(0.15 0.02 240);  /* slate-800 */
+  --slate-200: oklch(0.20 0.02 240);  /* slate-700 */
+  --slate-300: oklch(0.28 0.02 240);  /* slate-600 */
+  --slate-400: oklch(0.38 0.02 240);  /* slate-500 */
+  --slate-500: oklch(0.50 0.02 240);  /* slate-400 */
+  --slate-600: oklch(0.70 0.02 240);  /* slate-300 */
+  --slate-700: oklch(0.85 0.01 240);  /* slate-200 */
+  --slate-800: oklch(0.92 0.01 240);  /* slate-100 */
+  --slate-900: oklch(0.96 0.01 240);  /* slate-50 */
+  --slate-950: oklch(0.90 0.01 240);  /* soft slate-100-like bg for opacity styles */
+
+  /* Console Specific Colors (Light Mode Overrides) */
+  --console-bg: oklch(0.95 0.01 240 / 0.8);
+  --console-border: oklch(0.12 0.02 240 / 0.15);
+  --console-text-info: oklch(0.40 0.14 240);
+  --console-border-info: oklch(0.40 0.14 240 / 0.3);
+  --console-text-success: oklch(0.35 0.12 150);
+  --console-border-success: oklch(0.35 0.12 150 / 0.4);
+  --console-text-error: oklch(0.45 0.16 20);
+  --console-border-error: oklch(0.45 0.16 20 / 0.4);
+  --console-text-warning: oklch(0.42 0.12 75);
+  --console-border-warning: oklch(0.42 0.12 75 / 0.4);
+  --console-text-time: oklch(0.45 0.02 240);
+}
+
+/* ================= LIGHT MODE COLOR OVERRIDES ================= */
+.light.color-emerald {
+  --primary: oklch(0.55 0.15 150);
+  --primary-hover: oklch(0.48 0.15 150);
+  --primary-gradient-to: var(--primary);
+  --ring: oklch(0.55 0.15 150);
+}
+
+.light.color-blue {
+  --primary: oklch(0.55 0.18 240);
+  --primary-hover: oklch(0.48 0.18 240);
+  --primary-gradient-to: var(--primary);
+  --ring: oklch(0.55 0.18 240);
+}
+
+.light.color-amber {
+  --primary: oklch(0.62 0.15 75);
+  --primary-hover: oklch(0.55 0.15 75);
+  --primary-gradient-to: var(--primary);
+  --ring: oklch(0.62 0.15 75);
+}
+
+.light.color-violet {
+  --primary: oklch(0.55 0.18 290);
+  --primary-hover: oklch(0.48 0.18 290);
+  --primary-gradient-to: var(--primary);
+  --ring: oklch(0.55 0.18 290);
+}
+
+.light.color-mocha {
+  --primary: oklch(0.6083 0.0623 44.3588);
+  --primary-hover: oklch(0.52 0.06 44.35);
+  --primary-gradient-to: var(--primary);
+  --ring: oklch(0.6083 0.0623 44.3588);
+
+  /* Mocha specific light overrides */
+  --background: oklch(0.9529 0.0146 102.4597);
+  --foreground: oklch(0.4063 0.0255 40.3627);
+  --card: oklch(0.9529 0.0146 102.4597);
+  --card-foreground: oklch(0.4063 0.0255 40.3627);
+  --border: oklch(0.7473 0.0387 80.5476);
+  --secondary: oklch(0.7473 0.0387 80.5476);
 }
 
 @theme {
@@ -48,16 +281,48 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  /* Theme-aware Console color mappings */
+  --color-console-bg: var(--console-bg);
+  --color-console-border: var(--console-border);
+  --color-console-text-info: var(--console-text-info);
+  --color-console-border-info: var(--console-border-info);
+  --color-console-text-success: var(--console-text-success);
+  --color-console-border-success: var(--console-border-success);
+  --color-console-text-error: var(--console-text-error);
+  --color-console-border-error: var(--console-border-error);
+  --color-console-text-warning: var(--console-text-warning);
+  --color-console-border-warning: var(--console-border-warning);
+  --color-console-text-time: var(--console-text-time);
+
+  /* Overriding default Tailwind colors dynamically */
+  --color-white: var(--white);
+  --color-slate-50: var(--slate-50);
+  --color-slate-100: var(--slate-100);
+  --color-slate-200: var(--slate-200);
+  --color-slate-300: var(--slate-300);
+  --color-slate-400: var(--slate-400);
+  --color-slate-500: var(--slate-500);
+  --color-slate-600: var(--slate-600);
+  --color-slate-700: var(--slate-700);
+  --color-slate-800: var(--slate-800);
+  --color-slate-900: var(--slate-900);
+  --color-slate-950: var(--slate-950);
+
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
+  /* Theme color overrides for hardcoded gradients */
+  --color-pink-600: var(--primary-gradient-to);
+  --color-pink-500: var(--primary-gradient-to);
+  --color-purple-500: var(--secondary);
+
   /* Theme utilities mapping */
   --color-bgPrimary: var(--background);
-  --color-bgSecondary: rgba(30, 20, 35, 0.45);
+  --color-bgSecondary: var(--glass-bg-interactive);
   --color-bgTertiary: var(--card);
   --color-accentPrimary: var(--primary);
-  --color-accentPrimaryHover: oklch(0.75 0.22 332.02);
+  --color-accentPrimaryHover: var(--primary-hover);
   --color-accentSuccess: #10b981;
   --color-accentDanger: var(--destructive);
   --color-accentWarning: #f59e0b;
@@ -111,12 +376,12 @@
   }
 
   body {
-    @apply bg-[#08050a] text-slate-100 font-sans antialiased m-0 p-0 box-border min-h-screen relative;
+    @apply bg-background text-foreground font-sans antialiased m-0 p-0 box-border min-h-screen relative;
     overflow: visible;
     background-image:
-      radial-gradient(circle at 50% -20%, oklch(0.25 0.12 332.02 / 0.25), transparent 60%),
-      radial-gradient(circle at 10% 80%, oklch(0.20 0.10 320 / 0.12), transparent 40%),
-      radial-gradient(circle at 90% 60%, oklch(0.30 0.15 340 / 0.08), transparent 45%);
+      radial-gradient(circle at 50% -20%, var(--bg-glow-1), transparent 60%),
+      radial-gradient(circle at 10% 80%, var(--bg-glow-2), transparent 40%),
+      radial-gradient(circle at 90% 60%, var(--bg-glow-3), transparent 45%);
   }
 
   /* Custom scrollbar */
@@ -144,32 +409,32 @@
   }
 }
 
-/* Glassmorphism style utility with Quantum Rose tint */
+/* Glassmorphism style utility with dynamic tint */
 .glass-panel {
-  background: rgba(25, 15, 30, 0.45);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid oklch(0.7043 0.2019 332.0212 / 0.1);
+  border: 1px solid var(--glass-border);
 }
 
 .glass-card-interactive {
-  background: rgba(25, 15, 30, 0.35);
+  background: var(--glass-bg-interactive);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid oklch(0.7043 0.2019 332.0212 / 0.06);
+  border: 1px solid var(--glass-border);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-card-interactive:hover {
-  background: rgba(25, 15, 30, 0.5);
-  border-color: oklch(0.7043 0.2019 332.0212 / 0.3);
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
   transform: translateY(-2px);
 }
 
 /* Glowing text effects */
 .glow-text {
-  text-shadow: 0 0 20px oklch(0.7043 0.2019 332.0212 / 0.4);
+  text-shadow: 0 0 20px var(--glow-color);
 }
 
 /* Sliding active indicator for tab bar */
@@ -177,7 +442,7 @@
   position: absolute;
   bottom: 0;
   height: 2px;
-  background: linear-gradient(90deg, oklch(0.7043 0.2019 332.0212), #ec4899);
+  background: linear-gradient(90deg, var(--primary), var(--primary-gradient-to));
   transition: all 0.30s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
