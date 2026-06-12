@@ -46,7 +46,7 @@ export default function LoginPage() {
       <div className="glass-panel rounded-2xl p-8 shadow-2xl w-full max-w-md relative z-10 animate-scale-in">
         <div className="flex flex-col items-center gap-3 mb-8 select-none">
           <Cpu className="w-10 h-10 text-primary animate-pulse" />
-          <span className="text-2xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary-to to-secondary bg-clip-text text-transparent glow-text font-mono uppercase">
+          <span className="text-2xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary-to bg-clip-text text-transparent glow-text font-mono uppercase">
             LeadCrawler
           </span>
           <p className="text-sm text-slate-400">Đăng nhập để tiếp tục</p>

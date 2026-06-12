@@ -1,4 +1,5 @@
 import * as React from "react"
+import { cn } from "@/lib/utils"
 import {
   Table,
   TableBody,
@@ -25,6 +26,9 @@ interface DataTableProps<T> {
   emptyState?: React.ReactNode
   className?: string
   containerClassName?: string
+  wrapperClassName?: string
+  /** When true, the header stays fixed and only the body scrolls (its own scrollbar). */
+  scrollableBody?: boolean
 }
 
 export function DataTable<T>({
@@ -36,12 +40,21 @@ export function DataTable<T>({
   emptyState = "Không có dữ liệu.",
   className,
   containerClassName = "rounded-xl border border-white/5 bg-slate-950/20 overflow-hidden",
+  wrapperClassName,
+  scrollableBody = false,
 }: DataTableProps<T>) {
+  // With a scrollable body, each <tr> becomes its own fixed-layout mini-table
+  // so header and body columns line up even though they're separate tables.
+  const rowLayoutClass = scrollableBody ? "table table-fixed w-full" : undefined
+
   return (
     <div className={containerClassName}>
-      <Table className={className}>
-        <TableHeader className="bg-slate-900/60 border-b border-white/5 [&_tr]:border-b-0">
-          <TableRow className="hover:bg-transparent border-0">
+      <Table className={className} wrapperClassName={wrapperClassName} scrollableBody={scrollableBody}>
+        <TableHeader className={cn(
+          "bg-slate-900/95 border-b border-white/5 [&_tr]:border-b-0",
+          scrollableBody ? "block w-full shrink-0" : "sticky top-0 z-10"
+        )}>
+          <TableRow className={cn("hover:bg-transparent border-0", rowLayoutClass)}>
             {columns.map((column, idx) => (
               <TableHead
                 key={column.id || idx}
@@ -52,9 +65,9 @@ export function DataTable<T>({
             ))}
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className={cn(scrollableBody && "block w-full flex-1 overflow-y-scroll overscroll-contain min-h-0")}>
           {data.length === 0 ? (
-            <TableRow className="hover:bg-transparent border-0">
+            <TableRow className={cn("hover:bg-transparent border-0", rowLayoutClass)}>
               <TableCell
                 colSpan={columns.length}
                 className="text-center py-10 text-slate-500 font-mono"
@@ -72,7 +85,7 @@ export function DataTable<T>({
                 <TableRow
                   key={keyExtractor(row, rowIdx)}
                   onClick={onRowClick ? () => onRowClick(row, rowIdx) : undefined}
-                  className={rowClass}
+                  className={cn(rowClass, rowLayoutClass)}
                 >
                   {columns.map((column, colIdx) => {
                     const content = column.accessor(row, rowIdx)

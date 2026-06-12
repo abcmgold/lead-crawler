@@ -37,7 +37,7 @@ export default function AppHeader({ smtpSettings, username, onLogoutClick }: App
             {mobileMenuOpen ? <X className="w-4.5 h-4.5" /> : <Menu className="w-4.5 h-4.5" />}
           </button>
           <Cpu className="w-6 h-6 sm:w-7 sm:h-7 text-primary animate-pulse" />
-          <span className="text-base sm:text-xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary-to to-secondary bg-clip-text text-transparent glow-text font-mono uppercase">
+          <span className="text-base sm:text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary-to bg-clip-text text-transparent glow-text font-mono uppercase">
             LeadCrawler
           </span>
         </div>

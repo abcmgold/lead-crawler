@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { Search, Loader2, Clock, Trash2, Sparkles, X, ExternalLink, ChevronFirst, ChevronLast, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Search, Loader2, Clock, Trash2, Sparkles, ChevronFirst, ChevronLast, CheckCircle2, AlertCircle } from 'lucide-react';
 import { HistoryItem, Lead } from './types';
 import { apiFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import ConfirmDialog from './ConfirmDialog';
+import CrawlLeadsModal from './CrawlLeadsModal';
 import {
   Pagination,
   PaginationContent,
@@ -90,7 +90,6 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
 
   const modalTotalPages = Math.max(1, Math.ceil(modalTotalCount / modalPageSize));
   const safeModalPage = Math.min(modalCurrentPage, modalTotalPages);
-  const modalStartIndex = (safeModalPage - 1) * modalPageSize;
 
   const goToModalPage = (page: number) => {
     if (page >= 1 && page <= modalTotalPages) setModalCurrentPage(page);
@@ -108,51 +107,6 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
     }
     return pages;
   };
-
-  const modalColumns = React.useMemo<Column<Lead>[]>(() => [
-    {
-      id: 'name',
-      header: "Doanh Nghiệp / Site",
-      accessor: (lead) => lead.name,
-      className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
-      cellClassName: "px-4 py-3 font-semibold text-slate-200 truncate max-w-[200px] font-sans",
-    },
-    {
-      id: 'email',
-      header: "Email",
-      accessor: (lead) => (
-        <code className="text-primary font-mono text-xs bg-primary/5 px-2 py-0.5 rounded border border-primary/10 select-all">
-          {lead.email}
-        </code>
-      ),
-      className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
-      cellClassName: "px-4 py-3",
-    },
-    {
-      id: 'phone',
-      header: "Số điện thoại",
-      accessor: (lead) => lead.phone || '—',
-      className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
-      cellClassName: "px-4 py-3 text-slate-400 font-mono text-xs",
-    },
-    {
-      id: 'website',
-      header: "Website",
-      accessor: (lead) => (
-        <a
-          href={lead.website}
-          target="_blank"
-          rel="noreferrer"
-          className="text-slate-400 hover:text-primary hover:underline inline-flex items-center gap-1 transition-colors text-xs font-sans"
-        >
-          {lead.website}
-          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-        </a>
-      ),
-      className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
-      cellClassName: "px-4 py-3 max-w-[200px] truncate",
-    }
-  ], []);
 
   const consoleContainerRef = useRef<HTMLDivElement>(null);
 
@@ -382,145 +336,19 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
       />
 
       {/* Leads list modal for selected crawl log */}
-      {showLogLeadsModal && selectedCrawlLog && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in">
-            {/* Modal Header */}
-            <div className="p-6 border-b border-white/5 flex justify-between items-center shrink-0">
-              <div>
-                <h3 className="text-lg font-bold text-white font-sans">Kết quả cào cho: "{selectedCrawlLog.keyword}"</h3>
-                <p className="text-xs text-zinc-400 mt-1 font-mono">
-                  Thời gian: {new Date(selectedCrawlLog.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} | Tìm thấy {modalTotalCount} leads
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowLogLeadsModal(false)}
-                className="text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-xl transition-all cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </Button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-              {modalLoading ? (
-                <div className="flex items-center justify-center py-20 text-slate-500 font-mono gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                  Đang tải dữ liệu...
-                </div>
-              ) : modalLeads.length === 0 ? (
-                <div className="text-center py-12 text-slate-500 font-mono">
-                  Không tìm thấy lead nào thuộc phiên cào này hoặc đã bị xóa.
-                </div>
-              ) : (
-                <DataTable
-                  columns={modalColumns}
-                  data={modalLeads}
-                  keyExtractor={(lead) => lead.id}
-                  emptyState="Không tìm thấy lead nào thuộc phiên cào này hoặc đã bị xóa."
-                  className="w-full text-sm text-left text-slate-300"
-                />
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 bg-slate-950/20 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
-              <div className="text-xs text-slate-400 font-mono">
-                {modalTotalCount > 0 && !modalLoading && (
-                  <>
-                    Hiển thị <span className="text-white font-semibold">{modalStartIndex + 1}–{Math.min(modalStartIndex + modalPageSize, modalTotalCount)}</span> trong số <span className="text-white font-semibold">{modalTotalCount}</span> leads
-                  </>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center justify-center gap-4">
-                {modalTotalPages > 1 && !modalLoading && (
-                  <Pagination className="w-auto mx-0">
-                    <PaginationContent className="gap-0.5">
-                      <PaginationItem>
-                        <PaginationLink
-                          href="#"
-                          onClick={(e) => { e.preventDefault(); goToModalPage(1); }}
-                          aria-disabled={safeModalPage === 1}
-                          className={`w-8 h-8 flex items-center justify-center rounded-lg border-0 transition-all text-slate-400 hover:text-white hover:bg-white/5 ${safeModalPage === 1 ? 'opacity-30 pointer-events-none' : ''}`}
-                          aria-label="First page"
-                        >
-                          <ChevronFirst className="w-4 h-4" />
-                        </PaginationLink>
-                      </PaginationItem>
-
-                      <PaginationItem>
-                        <PaginationPrevious
-                          text="Trước"
-                          href="#"
-                          onClick={(e) => { e.preventDefault(); goToModalPage(safeModalPage - 1); }}
-                          aria-disabled={safeModalPage === 1}
-                          className={`text-xs h-8 rounded-lg border-0 text-slate-400 hover:text-white hover:bg-white/5 transition-all ${safeModalPage === 1 ? 'opacity-30 pointer-events-none' : ''}`}
-                        />
-                      </PaginationItem>
-
-                      {getModalPageNumbers().map((page, idx) =>
-                        page === 'ellipsis' ? (
-                          <PaginationItem key={`modal-ellipsis-${idx}`}>
-                            <PaginationEllipsis className="text-slate-500 w-8 h-8" />
-                          </PaginationItem>
-                        ) : (
-                          <PaginationItem key={`modal-page-${page}`}>
-                            <PaginationLink
-                              href="#"
-                              isActive={page === safeModalPage}
-                              onClick={(e) => { e.preventDefault(); goToModalPage(page); }}
-                              className={`w-8 h-8 text-xs rounded-lg border-0 transition-all ${page === safeModalPage
-                                ? 'bg-gradient-to-r from-primary to-primary-to text-white shadow-md shadow-primary/20 font-bold border-0'
-                                : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                }`}
-                            >
-                              {page}
-                            </PaginationLink>
-                          </PaginationItem>
-                        )
-                      )}
-
-                      <PaginationItem>
-                        <PaginationNext
-                          text="Sau"
-                          href="#"
-                          onClick={(e) => { e.preventDefault(); goToModalPage(safeModalPage + 1); }}
-                          aria-disabled={safeModalPage === modalTotalPages}
-                          className={`text-xs h-8 rounded-lg border-0 text-slate-400 hover:text-white hover:bg-white/5 transition-all ${safeModalPage === modalTotalPages ? 'opacity-30 pointer-events-none' : ''}`}
-                        />
-                      </PaginationItem>
-
-                      <PaginationItem>
-                        <PaginationLink
-                          href="#"
-                          onClick={(e) => { e.preventDefault(); goToModalPage(modalTotalPages); }}
-                          aria-disabled={safeModalPage === modalTotalPages}
-                          className={`w-8 h-8 flex items-center justify-center rounded-lg border-0 transition-all text-slate-400 hover:text-white hover:bg-white/5 ${safeModalPage === modalTotalPages ? 'opacity-30 pointer-events-none' : ''}`}
-                          aria-label="Last page"
-                        >
-                          <ChevronLast className="w-4 h-4" />
-                        </PaginationLink>
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                )}
-
-                <Button
-                  variant="outline"
-                  onClick={() => setShowLogLeadsModal(false)}
-                  className="bg-slate-800 hover:bg-slate-700 border border-white/10 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all cursor-pointer font-sans h-auto"
-                >
-                  Đóng
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      <CrawlLeadsModal
+        open={showLogLeadsModal}
+        crawlLog={selectedCrawlLog}
+        leads={modalLeads}
+        loading={modalLoading}
+        totalCount={modalTotalCount}
+        currentPage={safeModalPage}
+        totalPages={modalTotalPages}
+        pageSize={modalPageSize}
+        pageNumbers={getModalPageNumbers()}
+        onPageChange={goToModalPage}
+        onClose={() => setShowLogLeadsModal(false)}
+      />
     </div>
   );
 }
