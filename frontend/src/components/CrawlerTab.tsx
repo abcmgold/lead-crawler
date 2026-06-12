@@ -329,8 +329,8 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
             <div className="p-6 border-b border-white/5 flex justify-between items-center shrink-0">
               <div>
                 <h3 className="text-lg font-bold text-white font-sans">Kết quả cào cho: "{selectedCrawlLog.keyword}"</h3>
-                <p className="text-xs text-slate-400 mt-1 font-mono">
-                  Thời gian: {new Date(selectedCrawlLog.timestamp).toLocaleString('vi-VN')} | Tìm thấy {matchingLeads.length} leads
+                <p className="text-xs text-zinc-400 mt-1 font-mono">
+                  Thời gian: {new Date(selectedCrawlLog.timestamp).toLocaleString('vi-VN')} | Tổng cộng: {matchingLeads.length} leads (Mới: +{selectedCrawlLog.newLeadsCount} | Trùng/Cũ: {Math.max(0, matchingLeads.length - selectedCrawlLog.newLeadsCount)})
                 </p>
               </div>
               <Button
