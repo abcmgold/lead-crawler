@@ -456,15 +456,29 @@ async function performCrawl(keyword) {
   const existingEmails = new Set((await dbRepo.getLeads()).map(l => l.email.toLowerCase()));
   const addedInSession = new Set();
 
-  for (const url of urls) {
-    const crawled = await crawlWebsite(url);
-    results.push(crawled);
-    logSystem(`Crawl website: ${url} | Trạng thái: ${crawled.status} | Emails tìm thấy: ${crawled.emails.length}`, 'INFO');
+  // Crawl websites concurrently in parallel batches (concurrency: 15) to speed up drastically and prevent HTTP timeouts
+  const concurrencyLimit = 15;
+  const queue = [...urls];
+  
+  const workers = Array(Math.min(concurrencyLimit, queue.length)).fill(null).map(async () => {
+    while (queue.length > 0) {
+      const url = queue.shift();
+      try {
+        const crawled = await crawlWebsite(url);
+        results.push(crawled);
+        logSystem(`Crawl website: ${url} | Trạng thái: ${crawled.status} | Emails tìm thấy: ${crawled.emails.length}`, 'INFO');
 
-    if (crawled.status === 'success') {
-      newLeadsCount += await leadService.addLeadsFromCrawl(crawled, keyword, logId, existingEmails, addedInSession);
+        if (crawled.status === 'success') {
+          const added = await leadService.addLeadsFromCrawl(crawled, keyword, logId, existingEmails, addedInSession);
+          newLeadsCount += added;
+        }
+      } catch (err) {
+        logSystem(`Lỗi khi cào URL ${url}: ${err.message}`, 'WARNING');
+      }
     }
-  }
+  });
+
+  await Promise.all(workers);
 
   await dbRepo.addLog({
     id: logId,
