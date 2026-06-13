@@ -168,7 +168,7 @@ export default function CrawlLeadsModal({ open, crawlLog, onClose }: CrawlLeadsM
     <Modal
       open={open}
       onClose={onClose}
-      className="max-w-4xl max-h-[85vh] overflow-hidden"
+      className="max-w-4xl h-[85vh] overflow-hidden"
       title={<span title={crawlLog.keyword}>Kết quả cào cho: "{displayTitle}"</span>}
       description={`Thời gian: ${new Date(crawlLog.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`}
       footer={
@@ -181,14 +181,14 @@ export default function CrawlLeadsModal({ open, crawlLog, onClose }: CrawlLeadsM
         </Button>
       }
     >
-      <Tabs defaultValue="emails">
+      <Tabs defaultValue="emails" className="flex flex-col flex-1 min-h-0">
         <TabsList>
           <TabsTrigger value="emails">Email ({emails.totalCount})</TabsTrigger>
           <TabsTrigger value="phones">Số điện thoại ({phones.totalCount})</TabsTrigger>
           <TabsTrigger value="socials">Mạng xã hội ({socials.totalCount})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="emails" className="mt-4">
+        <TabsContent value="emails" className="mt-4 flex flex-col flex-1 min-h-0">
           <DataTable
             columns={emailColumns}
             data={emails.data}
@@ -228,7 +228,7 @@ export default function CrawlLeadsModal({ open, crawlLog, onClose }: CrawlLeadsM
           />
         </TabsContent>
 
-        <TabsContent value="socials" className="mt-4">
+        <TabsContent value="socials" className="mt-4 flex flex-col flex-1 min-h-0">
           <DataTable
             columns={socialColumns}
             data={socials.data}

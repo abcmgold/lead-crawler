@@ -11,6 +11,9 @@ const MAX_URLS = 250;
 // If the search engines return fewer than this many unique URLs, retry the search once more
 const MIN_URLS_BEFORE_RETRY = 80;
 
+// Reject responses larger than this to avoid OOM on huge/unexpected pages (e.g. misidentified binary files)
+const MAX_RESPONSE_SIZE = 5 * 1024 * 1024; // 5MB
+
 // Helper to parse DuckDuckGo search result links
 // `stats.raw` counts every candidate result link seen (before exact-URL dedup)
 function parseDdgResults($, urls, stats = { raw: 0 }) {
@@ -73,6 +76,8 @@ async function duckduckgoSearch(query) {
         'Upgrade-Insecure-Requests': '1'
       },
       timeout: 10000,
+      maxContentLength: MAX_RESPONSE_SIZE,
+      maxBodyLength: MAX_RESPONSE_SIZE,
       // DDG sometimes responds with 202 (anti-bot challenge) but still includes usable results in the body,
       // so don't discard the whole response just because the status isn't a plain 200.
       validateStatus: (status) => status < 500
@@ -114,7 +119,9 @@ async function duckduckgoSearch(query) {
             'Referer': 'https://html.duckduckgo.com/',
             'Origin': 'https://html.duckduckgo.com'
           },
-          timeout: 10000
+          timeout: 10000,
+          maxContentLength: MAX_RESPONSE_SIZE,
+          maxBodyLength: MAX_RESPONSE_SIZE
         });
 
         $ = cheerio.load(response.data);
@@ -152,7 +159,9 @@ async function bingSearch(query) {
           'Accept-Language': 'vi,en-US;q=0.9,en;q=0.8',
           'Cookie': cookieHeader
         },
-        timeout: 10000
+        timeout: 10000,
+        maxContentLength: MAX_RESPONSE_SIZE,
+        maxBodyLength: MAX_RESPONSE_SIZE
       });
 
       // Extract cookies for subsequent page requests
@@ -239,6 +248,8 @@ async function mojeekSearch(query) {
           'Accept-Language': 'vi,en-US;q=0.9,en;q=0.8',
         },
         timeout: 10000,
+        maxContentLength: MAX_RESPONSE_SIZE,
+        maxBodyLength: MAX_RESPONSE_SIZE,
         validateStatus: (status) => status < 500
       });
 
@@ -435,6 +446,8 @@ async function crawlWebsite(targetUrl) {
     const mainPageRes = await axios.get(targetUrl, {
       headers: { 'User-Agent': getRandomUserAgent() },
       timeout: 8000,
+      maxContentLength: MAX_RESPONSE_SIZE,
+      maxBodyLength: MAX_RESPONSE_SIZE,
       validateStatus: () => true,
       // Keep the raw response body as a string even if it looks like JSON
       transformResponse: (data) => data
@@ -486,6 +499,8 @@ async function crawlWebsite(targetUrl) {
         const contactPageRes = await axios.get(contactLinks[0], {
           headers: { 'User-Agent': getRandomUserAgent() },
           timeout: 6000,
+          maxContentLength: MAX_RESPONSE_SIZE,
+          maxBodyLength: MAX_RESPONSE_SIZE,
           validateStatus: () => true,
           transformResponse: (data) => data
         });
@@ -632,8 +647,9 @@ async function performCrawl(keyword) {
     addedSocials: new Set()
   };
 
-  // Crawl websites concurrently in parallel batches (concurrency: 15) to speed up drastically and prevent HTTP timeouts
-  const concurrencyLimit = 15;
+  // Crawl websites concurrently in parallel batches to speed up while keeping memory usage bounded
+  // (each worker holds an HTML response + 1-2 cheerio DOM trees at once, so keep this modest on low-memory hosts)
+  const concurrencyLimit = 6;
   const queue = [...urls];
 
   const workers = Array(Math.min(concurrencyLimit, queue.length)).fill(null).map(async () => {
