@@ -208,7 +208,7 @@ export default function CrawlLeadsModal({ open, crawlLog, onClose }: CrawlLeadsM
           />
         </TabsContent>
 
-        <TabsContent value="phones" className="mt-4">
+        <TabsContent value="phones" className="mt-4 flex flex-col flex-1 min-h-0">
           <DataTable
             columns={phoneColumns}
             data={phones.data}
