@@ -19,10 +19,11 @@ import { apiFetch } from './lib/api';
 export default function App() {
   const location = useLocation();
   const { user, loading: authLoading, logout } = useAuth();
-  const [leads, setLeads] = useState<Lead[]>([]);
+  const [stats, setStats] = useState({ total: 0, success: 0, failed: 0 });
+  const [leadsVersion, setLeadsVersion] = useState(0);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showClearLeadsConfirm, setShowClearLeadsConfirm] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedLeads, setSelectedLeads] = useState<Lead[]>([]);
   const [smtpSettings, setSmtpSettings] = useState<SmtpSettings>({ host: '', port: '', user: '', pass: '' });
 
   // Toast notifications state
@@ -41,6 +42,7 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     loadSettings();
+    loadSummary();
   }, [user]);
 
   const showToast = (message: string, isError: boolean = false) => {
@@ -50,15 +52,21 @@ export default function App() {
     }, 4000);
   };
 
-  const loadLeads = async () => {
+  const loadSummary = async () => {
     try {
-      const res = await apiFetch('/api/leads');
-      const data = await res.json();
-      setLeads(data);
+      const res = await apiFetch('/api/leads/summary');
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data);
+      }
     } catch (err) {
-      console.error(err);
-      showToast('Không thể tải danh sách leads từ backend!', true);
+      console.error('Lỗi khi tải thống kê:', err);
     }
+  };
+
+  const triggerLeadsRefresh = () => {
+    setLeadsVersion(v => v + 1);
+    loadSummary();
   };
 
   const loadSettings = async () => {
@@ -75,20 +83,30 @@ export default function App() {
     try {
       await apiFetch('/api/leads', { method: 'DELETE' });
       showToast('Đã xóa toàn bộ leads thành công.');
-      setSelectedIds(new Set());
-      loadLeads();
+      setSelectedLeads([]);
+      triggerLeadsRefresh();
     } catch (err) {
       showToast('Không thể xóa leads!', true);
     }
   };
 
-  const removeSelectedLead = (id: string) => {
-    const nextSelected = new Set(selectedIds);
-    nextSelected.delete(id);
-    setSelectedIds(nextSelected);
+  const handleSelectionChange = (newSelectedIds: Set<string>, currentLeads: Lead[]) => {
+    setSelectedLeads(prev => {
+      // Filter out deselected leads belonging to the current page
+      const deselectedInCurrentPage = currentLeads.filter(l => !newSelectedIds.has(l.id)).map(l => l.id);
+      const next = prev.filter(l => !deselectedInCurrentPage.includes(l.id));
+
+      // Add newly selected leads
+      currentLeads.forEach(lead => {
+        if (newSelectedIds.has(lead.id) && !next.some(l => l.id === lead.id)) {
+          next.push(lead);
+        }
+      });
+      return next;
+    });
   };
 
-  const selectedLeadsDetails = leads.filter(l => selectedIds.has(l.id));
+  const selectedIds = new Set(selectedLeads.map(l => l.id));
 
   // Public login route does not need the dashboard layout / auth check
   if (location.pathname === '/login') {
@@ -123,7 +141,7 @@ export default function App() {
           onLogoutClick={() => setShowLogoutConfirm(true)}
         />
 
-        <StatsBar leads={leads} selectedCount={selectedIds.size} />
+        <StatsBar stats={stats} selectedCount={selectedLeads.length} />
 
         {/* Main Content Area */}
         <main className="w-full max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex-1 flex flex-col">
@@ -131,15 +149,16 @@ export default function App() {
             <Route path="/" element={<Navigate to="/crawler" replace />} />
             <Route
               path="/crawler"
-              element={<CrawlerTab onCrawlSuccess={loadLeads} showToast={showToast} leads={leads} />}
+              element={<CrawlerTab onCrawlSuccess={triggerLeadsRefresh} showToast={showToast} />}
             />
             <Route
               path="/leads"
               element={
                 <LeadsTab
-                  leads={leads}
+                  leadsVersion={leadsVersion}
+                  leadsCount={stats.total}
                   selectedIds={selectedIds}
-                  onSelectionChange={setSelectedIds}
+                  onSelectionChange={handleSelectionChange}
                   onClearAll={() => setShowClearLeadsConfirm(true)}
                   showToast={showToast}
                 />
@@ -149,13 +168,12 @@ export default function App() {
               path="/email"
               element={
                 <CampaignTab
-                  allLeads={leads}
-                  selectedLeads={selectedLeadsDetails}
-                  onRemoveLead={removeSelectedLead}
-                  onSelectLeads={setSelectedIds}
+                  selectedLeads={selectedLeads}
+                  onRemoveLead={(id) => setSelectedLeads(prev => prev.filter(l => l.id !== id))}
+                  onSelectLeads={setSelectedLeads}
                   smtpSettings={smtpSettings}
                   showToast={showToast}
-                  refreshLeads={loadLeads}
+                  refreshLeads={triggerLeadsRefresh}
                 />
               }
             />

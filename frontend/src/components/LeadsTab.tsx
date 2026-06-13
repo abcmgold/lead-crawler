@@ -17,16 +17,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 interface LeadsTabProps {
-  leads: Lead[];
+  leadsVersion: number;
+  leadsCount: number;
   selectedIds: Set<string>;
-  onSelectionChange: (ids: Set<string>) => void;
+  onSelectionChange: (ids: Set<string>, currentLeads: Lead[]) => void;
   onClearAll: () => void;
   showToast: (message: string, isError?: boolean) => void;
 }
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 
-export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClearAll, showToast }: LeadsTabProps) {
+export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSelectionChange, onClearAll, showToast }: LeadsTabProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -86,10 +87,10 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
   };
 
   // Fetch data whenever pagination parameters change, or new leads are crawled
-  // (CrawlerTab triggers parent leads update)
+  // (CrawlerTab triggers parent leads update via leadsVersion)
   useEffect(() => {
     fetchPaginatedLeads();
-  }, [currentPage, pageSize, searchQuery, selectedLogId, leads]);
+  }, [currentPage, pageSize, searchQuery, selectedLogId, leadsVersion]);
 
   const isAllFilteredSelected = paginatedLeads.length > 0 && paginatedLeads.every(l => selectedIds.has(l.id));
 
@@ -124,7 +125,7 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
     } else {
       paginatedLeads.forEach(l => nextSelected.delete(l.id));
     }
-    onSelectionChange(nextSelected);
+    onSelectionChange(nextSelected, paginatedLeads);
   };
 
   const handleSelectOne = (id: string, checked: boolean) => {
@@ -134,7 +135,7 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
     } else {
       nextSelected.delete(id);
     }
-    onSelectionChange(nextSelected);
+    onSelectionChange(nextSelected, paginatedLeads);
   };
 
   const columns = useMemo<Column<Lead>[]>(() => [
@@ -216,14 +217,25 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
     {
       id: 'emailStatus',
       header: "Trạng thái Email",
-      accessor: (lead) => (
-        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold border font-sans ${lead.emailStatus === 'Gửi thành công' ? 'bg-emerald-950/30 text-emerald-400 border-emerald-500/20' :
-          lead.emailStatus.startsWith('Thất bại') ? 'bg-rose-950/30 text-rose-400 border-rose-500/20' :
-            'bg-slate-900/50 text-slate-400 border-white/5'
+      accessor: (lead) => {
+        const isSuccess = lead.emailStatus === 'Gửi thành công';
+        const isFailed = lead.emailStatus.startsWith('Thất bại');
+        
+        return (
+          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold border font-sans inline-flex items-center gap-1.5 shrink-0 ${
+            isSuccess ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25 shadow-[0_0_12px_rgba(16,185,129,0.05)]' :
+            isFailed ? 'bg-rose-500/10 text-rose-400 border-rose-500/25 shadow-[0_0_12px_rgba(244,63,94,0.05)]' :
+            'bg-slate-850/60 text-slate-400 border-white/5'
           }`}>
-          {lead.emailStatus}
-        </span>
-      ),
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+              isSuccess ? 'bg-emerald-400 animate-pulse' :
+              isFailed ? 'bg-rose-400' :
+              'bg-slate-500'
+            }`} />
+            {lead.emailStatus}
+          </span>
+        );
+      },
       className: "px-6 py-4 font-semibold text-right font-sans",
       cellClassName: "px-6 py-4 text-right",
     }
@@ -359,6 +371,7 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
         emptyState={totalLeadsCount === 0 ? 'Chưa có leads nào. Hãy quét từ khóa ở tab cào.' : 'Không tìm thấy kết quả phù hợp.'}
         containerClassName="relative w-full overflow-x-auto glass-panel rounded-2xl shadow-xl border border-white/5"
         className="w-full text-sm text-left text-slate-300 border-collapse"
+        loading={loading}
         pagination={{
           currentPage: safePage,
           totalPages: totalPages,
@@ -366,7 +379,7 @@ export default function LeadsTab({ leads, selectedIds, onSelectionChange, onClea
           pageSize: pageSize,
           onPageChange: goToPage,
           itemLabel: "leads",
-          totalAllLeadsCount: leads.length,
+          totalAllLeadsCount: leadsCount,
           selectedCount: selectedIds.size,
           pageSizeOptions: PAGE_SIZE_OPTIONS,
           onPageSizeChange: (size) => { setPageSize(size); setCurrentPage(1); }

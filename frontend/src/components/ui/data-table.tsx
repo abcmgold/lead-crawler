@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ChevronFirst, ChevronLast } from "lucide-react"
+import { ChevronFirst, ChevronLast, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CustomSelect } from "./select"
 import {
@@ -75,6 +75,8 @@ interface DataTableProps<T> {
   scrollableBody?: boolean
   /** When provided, renders a pagination bar below the table. */
   pagination?: DataTablePaginationProps
+  /** Renders a loading spinner instead of row content when true. */
+  loading?: boolean
 }
 
 export function DataTable<T>({
@@ -89,6 +91,7 @@ export function DataTable<T>({
   wrapperClassName,
   scrollableBody = false,
   pagination,
+  loading = false,
 }: DataTableProps<T>) {
   // With a scrollable body, each <tr> becomes its own fixed-layout mini-table
   // so header and body columns line up even though they're separate tables.
@@ -132,7 +135,19 @@ export function DataTable<T>({
           </TableRow>
         </TableHeader>
         <TableBody className={cn(scrollableBody && "block w-full flex-1 overflow-y-scroll overscroll-contain min-h-0")}>
-          {data.length === 0 ? (
+          {loading ? (
+            <TableRow className={cn("hover:bg-transparent border-0", rowLayoutClass)}>
+              <TableCell
+                colSpan={columns.length}
+                className="text-center py-20 text-slate-500 font-mono"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  <span>Đang tải dữ liệu...</span>
+                </div>
+              </TableCell>
+            </TableRow>
+          ) : data.length === 0 ? (
             <TableRow className={cn("hover:bg-transparent border-0", rowLayoutClass)}>
               <TableCell
                 colSpan={columns.length}

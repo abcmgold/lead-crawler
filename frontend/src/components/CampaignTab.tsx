@@ -10,10 +10,9 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 
 interface CampaignTabProps {
-  allLeads: Lead[];
   selectedLeads: Lead[];
   onRemoveLead: (id: string) => void;
-  onSelectLeads: (ids: Set<string>) => void;
+  onSelectLeads: (leads: Lead[]) => void;
   smtpSettings: SmtpSettings;
   showToast: (message: string, isError?: boolean) => void;
   refreshLeads: () => void;
@@ -33,7 +32,7 @@ interface Template {
   createdAt: string;
 }
 
-export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onSelectLeads, smtpSettings, showToast, refreshLeads }: CampaignTabProps) {
+export default function CampaignTab({ selectedLeads, onRemoveLead, onSelectLeads, smtpSettings, showToast, refreshLeads }: CampaignTabProps) {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [customEmailsText, setCustomEmailsText] = useState('');
@@ -93,32 +92,31 @@ export default function CampaignTab({ allLeads, selectedLeads, onRemoveLead, onS
     }
   };
 
-  const handleSelectCrawlLog = (logId: string) => {
+  const handleSelectCrawlLog = async (logId: string) => {
     const log = crawlLogs.find(l => l.id === logId);
     if (!log) return;
 
-    // Filter leads belonging to this crawl log
-    const matchingLeads = allLeads.filter(lead => {
-      if (lead.crawlLogId === logId) return true;
+    try {
+      const res = await apiFetch(`/api/leads?crawlLogId=${logId}`);
+      if (!res.ok) throw new Error();
+      const matchingLeads = await res.json();
 
-      // Fallback matching for historical logs: keyword matches and timestamp within 2 minutes
-      if (lead.keyword === log.keyword) {
-        const leadTime = new Date(lead.createdAt).getTime();
-        const logTime = new Date(log.timestamp).getTime();
-        return Math.abs(leadTime - logTime) < 120000;
+      if (!matchingLeads || matchingLeads.length === 0) {
+        showToast('Không tìm thấy lead nào thuộc lần cào này.', true);
+        return;
       }
-      return false;
-    });
 
-    if (matchingLeads.length === 0) {
-      showToast('Không tìm thấy lead nào thuộc lần cào này.', true);
-      return;
+      const nextSelected = [...selectedLeads];
+      matchingLeads.forEach((l: any) => {
+        if (!nextSelected.some(existing => existing.id === l.id)) {
+          nextSelected.push(l);
+        }
+      });
+      onSelectLeads(nextSelected);
+      showToast(`Đã thêm ${matchingLeads.length} leads từ lần cào "${log.keyword}"!`);
+    } catch (e) {
+      showToast('Không thể tải danh sách leads từ lần cào này!', true);
     }
-
-    const nextSelected = new Set(selectedLeads.map(l => l.id));
-    matchingLeads.forEach(l => nextSelected.add(l.id));
-    onSelectLeads(nextSelected);
-    showToast(`Đã thêm ${matchingLeads.length} leads từ lần cào "${log.keyword}"!`);
   };
 
   const handleCreateNewClick = () => {

@@ -245,10 +245,23 @@ async function deleteTemplate(id) {
   await pool.query('DELETE FROM email_templates WHERE id = $1', [id]);
 }
 
+async function getLeadsSummary() {
+  const totalRes = await pool.query('SELECT COUNT(*) FROM leads');
+  const successRes = await pool.query("SELECT COUNT(*) FROM leads WHERE email_status = 'Gửi thành công'");
+  const failedRes = await pool.query("SELECT COUNT(*) FROM leads WHERE email_status LIKE 'Thất bại%'");
+
+  return {
+    total: parseInt(totalRes.rows[0].count, 10),
+    success: parseInt(successRes.rows[0].count, 10),
+    failed: parseInt(failedRes.rows[0].count, 10)
+  };
+}
+
 module.exports = {
   getLeads,
   getLeadsFiltered,
   getLeadsPaginated,
+  getLeadsSummary,
   findLeadByEmail,
   insertLead,
   updateLeadPhone,

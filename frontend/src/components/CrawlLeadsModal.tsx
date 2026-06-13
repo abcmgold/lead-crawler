@@ -102,33 +102,23 @@ export default function CrawlLeadsModal({
         </Button>
       }
     >
-      {loading ? (
-        <div className="flex items-center justify-center py-20 text-slate-500 font-mono gap-2">
-          <Loader2 className="w-5 h-5 animate-spin text-primary" />
-          Đang tải dữ liệu...
-        </div>
-      ) : leads.length === 0 ? (
-        <div className="text-center py-12 text-slate-500 font-mono">
-          Không tìm thấy lead nào thuộc phiên cào này hoặc đã bị xóa.
-        </div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={leads}
-          keyExtractor={(lead) => lead.id}
-          emptyState="Không tìm thấy lead nào thuộc phiên cào này hoặc đã bị xóa."
-          className="w-full text-sm text-left text-slate-300"
-          scrollableBody
-          pagination={{
-            currentPage,
-            totalPages,
-            totalCount,
-            pageSize,
-            onPageChange,
-            itemLabel: "leads",
-          }}
-        />
-      )}
+      <DataTable
+        columns={columns}
+        data={leads}
+        keyExtractor={(lead) => lead.id}
+        emptyState="Không tìm thấy lead nào thuộc phiên cào này hoặc đã bị xóa."
+        className="w-full text-sm text-left text-slate-300"
+        scrollableBody
+        loading={loading}
+        pagination={{
+          currentPage,
+          totalPages,
+          totalCount,
+          pageSize,
+          onPageChange,
+          itemLabel: "leads",
+        }}
+      />
     </Modal>
   );
 }

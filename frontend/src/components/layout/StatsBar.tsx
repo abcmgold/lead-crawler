@@ -1,12 +1,11 @@
 import { Database, Users, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Lead } from '../types';
 
 interface StatsBarProps {
-  leads: Lead[];
+  stats: { total: number; success: number; failed: number };
   selectedCount: number;
 }
 
-export default function StatsBar({ leads, selectedCount }: StatsBarProps) {
+export default function StatsBar({ stats, selectedCount }: StatsBarProps) {
   return (
     <section className="w-full max-w-7xl mx-auto px-3 sm:px-4 mt-[120px] sm:mt-[140px] grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 shrink-0">
 
@@ -16,7 +15,7 @@ export default function StatsBar({ leads, selectedCount }: StatsBarProps) {
         </div>
         <div className="min-w-0">
           <p className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans truncate">Tổng số lead cào</p>
-          <p className="text-lg sm:text-2xl font-bold font-mono text-white mt-0.5">{leads.length}</p>
+          <p className="text-lg sm:text-2xl font-bold font-mono text-white mt-0.5">{stats.total}</p>
         </div>
       </div>
 
@@ -37,7 +36,7 @@ export default function StatsBar({ leads, selectedCount }: StatsBarProps) {
         <div className="min-w-0">
           <p className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans truncate">Đã gửi thành công</p>
           <p className="text-lg sm:text-2xl font-bold font-mono text-white mt-0.5">
-            {leads.filter(l => l.emailStatus === 'Gửi thành công').length}
+            {stats.success}
           </p>
         </div>
       </div>
@@ -49,7 +48,7 @@ export default function StatsBar({ leads, selectedCount }: StatsBarProps) {
         <div className="min-w-0">
           <p className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans truncate">Gửi thất bại</p>
           <p className="text-lg sm:text-2xl font-mono font-bold text-white mt-0.5">
-            {leads.filter(l => l.emailStatus.startsWith('Thất bại')).length}
+            {stats.failed}
           </p>
         </div>
       </div>

@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 interface CrawlerTabProps {
   onCrawlSuccess: () => void;
   showToast: (message: string, isError?: boolean) => void;
-  leads: Lead[];
 }
 
 interface ConsoleLog {
@@ -20,7 +19,7 @@ interface ConsoleLog {
   type: 'info' | 'success' | 'warning' | 'error';
 }
 
-export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: CrawlerTabProps) {
+export default function CrawlerTab({ onCrawlSuccess, showToast }: CrawlerTabProps) {
   const [keyword, setKeyword] = useState('');
   const [isCrawling, setIsCrawling] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -238,6 +237,7 @@ export default function CrawlerTab({ onCrawlSuccess, showToast, leads }: Crawler
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 disabled={isCrawling}
+                className='h-14'
               />
             </div>
             <Button
@@ -430,57 +430,51 @@ const HistoryCard = React.memo(function HistoryCard({
         )}
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-16 text-slate-500 font-mono gap-2">
-          <Loader2 className="w-5 h-5 animate-spin text-primary" />
-          Đang tải lịch sử...
-        </div>
-      ) : (
-        <DataTable
-          columns={React.useMemo<Column<HistoryItem>[]>(() => [
-            {
-              id: 'timestamp',
-              header: "Thời gian",
-              accessor: (log) => new Date(log.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
-              className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
-              cellClassName: "px-5 py-4 text-slate-400 font-mono",
-            },
-            {
-              id: 'keyword',
-              header: "Từ khóa / URL",
-              accessor: (log) => log.keyword,
-              className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
-              cellClassName: "px-5 py-4 font-semibold text-slate-200",
-            },
-            {
-              id: 'urlsCount',
-              header: "Số URL quét",
-              accessor: (log) => `${log.urlsCount} URLs`,
-              className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
-              cellClassName: "px-5 py-4 text-slate-400 font-mono",
-            },
-            {
-              id: 'newLeadsCount',
-              header: "Số Leads mới",
-              accessor: (log) => `+${log.newLeadsCount} Leads`,
-              className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
-              cellClassName: "px-5 py-4 text-emerald-400 font-semibold font-mono",
-            }
-          ], [])}
-          data={history}
-          keyExtractor={(log) => log.id}
-          onRowClick={(log) => onRowClick(log)}
-          emptyState="Chưa có lịch sử quét nào."
-          pagination={{
-            currentPage,
-            totalPages,
-            totalCount,
-            pageSize,
-            onPageChange,
-            itemLabel: "phiên quét",
-          }}
-        />
-      )}
+      <DataTable
+        columns={React.useMemo<Column<HistoryItem>[]>(() => [
+          {
+            id: 'timestamp',
+            header: "Thời gian",
+            accessor: (log) => new Date(log.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+            className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
+            cellClassName: "px-5 py-4 text-slate-400 font-mono",
+          },
+          {
+            id: 'keyword',
+            header: "Từ khóa / URL",
+            accessor: (log) => log.keyword,
+            className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
+            cellClassName: "px-5 py-4 font-semibold text-slate-200",
+          },
+          {
+            id: 'urlsCount',
+            header: "Số URL quét",
+            accessor: (log) => `${log.urlsCount} URLs`,
+            className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
+            cellClassName: "px-5 py-4 text-slate-400 font-mono",
+          },
+          {
+            id: 'newLeadsCount',
+            header: "Số Leads mới",
+            accessor: (log) => `+${log.newLeadsCount} Leads`,
+            className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
+            cellClassName: "px-5 py-4 text-emerald-400 font-semibold font-mono",
+          }
+        ], [])}
+        data={history}
+        keyExtractor={(log) => log.id}
+        onRowClick={(log) => onRowClick(log)}
+        emptyState="Chưa có lịch sử quét nào."
+        loading={loading}
+        pagination={{
+          currentPage,
+          totalPages,
+          totalCount,
+          pageSize,
+          onPageChange,
+          itemLabel: "phiên quét",
+        }}
+      />
     </div>
   );
 });

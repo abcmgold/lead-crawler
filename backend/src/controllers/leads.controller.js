@@ -37,4 +37,13 @@ async function cleanPhones(req, res) {
   res.json({ success: true, fixedCount, total });
 }
 
-module.exports = { getLeads, clearLeads, cleanPhones };
+async function getSummary(req, res) {
+  try {
+    const summary = await dbRepo.getLeadsSummary();
+    res.json(summary);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+module.exports = { getLeads, clearLeads, cleanPhones, getSummary };
