@@ -6,7 +6,7 @@ const dbRepo = require('../repositories/db.repository');
 const leadService = require('./lead.service');
 
 // Target number of unique URLs to collect per crawl run
-const MAX_URLS = 250;
+const MAX_URLS = 200;
 
 // If the search engines return fewer than this many unique URLs, retry the search once more
 const MIN_URLS_BEFORE_RETRY = 80;
@@ -338,9 +338,7 @@ function extractSocialLinks($, baseUrl, info) {
   });
 }
 
-function extractContacts(html, info) {
-  const $ = cheerio.load(html);
-
+function extractContacts($, html, info) {
   // 1. Extract from mailto: and tel: links directly
   $('a[href]').each((i, el) => {
     const href = $(el).attr('href');
@@ -424,6 +422,10 @@ function extractContacts(html, info) {
       }
       // Allow any phone numbers between 8 and 15 digits
       if (/^\+?\d{8,15}$/.test(cleanPhone)) {
+        // Filter out invalid sequences starting with 3 or more leading zeros (e.g. 000...)
+        if (/^\+?0{3,}/.test(cleanPhone)) {
+          return;
+        }
         info.phones.push(cleanPhone);
       }
     });
@@ -465,7 +467,7 @@ async function crawlWebsite(targetUrl) {
     info.title = $('title').text().trim() || $('meta[property="og:site_name"]').attr('content') || new URL(targetUrl).hostname;
 
     // Search email and phone numbers on current page
-    extractContacts(html, info);
+    extractContacts($, html, info);
     extractSocialLinks($, targetUrl, info);
 
     // Smart Crawl: Search for Contact page link
@@ -505,13 +507,21 @@ async function crawlWebsite(targetUrl) {
           transformResponse: (data) => data
         });
         if (contactPageRes.status === 200) {
-          extractContacts(contactPageRes.data, info);
-          extractSocialLinks(cheerio.load(contactPageRes.data), contactLinks[0], info);
+          const contactHtml = contactPageRes.data;
+          const contact$ = cheerio.load(contactHtml);
+          extractContacts(contact$, contactHtml, info);
+          extractSocialLinks(contact$, contactLinks[0], info);
+          
+          // Free contact page Cheerio DOM tree
+          contact$.root().empty();
         }
       } catch (e) {
         // Ignore contact page failure, stick to home page results
       }
     }
+
+    // Free main page Cheerio DOM tree
+    $.root().empty();
 
     // Process and filter results
     info.emails = [...new Set(info.emails)];
@@ -649,7 +659,7 @@ async function performCrawl(keyword) {
 
   // Crawl websites concurrently in parallel batches to speed up while keeping memory usage bounded
   // (each worker holds an HTML response + 1-2 cheerio DOM trees at once, so keep this modest on low-memory hosts)
-  const concurrencyLimit = 6;
+  const concurrencyLimit = 5;
   const queue = [...urls];
 
   const workers = Array(Math.min(concurrencyLimit, queue.length)).fill(null).map(async () => {
