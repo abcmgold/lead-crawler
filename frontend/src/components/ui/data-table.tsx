@@ -166,7 +166,11 @@ export function DataTable<T>({
                 <TableRow
                   key={keyExtractor(row, rowIdx)}
                   onClick={onRowClick ? () => onRowClick(row, rowIdx) : undefined}
-                  className={cn(rowClass, rowLayoutClass)}
+                  className={cn(
+                    onRowClick && "cursor-pointer",
+                    rowClass,
+                    rowLayoutClass
+                  )}
                 >
                   {columns.map((column, colIdx) => {
                     const content = column.accessor(row, rowIdx)
