@@ -429,7 +429,7 @@ export default function CampaignTab({ selectedLeads, onRemoveLead, onSelectLeads
                       <Button
                         type="button"
                         variant="link"
-                        onClick={() => onSelectLeads(new Set())}
+                        onClick={() => onSelectLeads([])}
                         className="text-rose-400 hover:text-rose-300 transition-colors h-auto p-0"
                       >
                         Bỏ chọn tất cả ({selectedLeads.length})
