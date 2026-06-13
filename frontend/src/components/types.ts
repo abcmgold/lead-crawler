@@ -1,10 +1,30 @@
-export interface Lead {
+export interface LeadEmail {
   id: string;
   name: string;
   email: string;
-  phone: string;
   website: string;
   emailStatus: string;
+  keyword: string;
+  createdAt: string;
+  crawlLogId?: string;
+}
+
+export interface LeadPhone {
+  id: string;
+  name: string;
+  phone: string;
+  website: string;
+  keyword: string;
+  createdAt: string;
+  crawlLogId?: string;
+}
+
+export interface LeadSocial {
+  id: string;
+  name: string;
+  platform: string;
+  url: string;
+  website: string;
   keyword: string;
   createdAt: string;
   crawlLogId?: string;
@@ -25,5 +45,7 @@ export interface HistoryItem {
   timestamp: string;
   keyword: string;
   urlsCount: number;
-  newLeadsCount: number;
+  newEmailsCount: number;
+  newPhonesCount: number;
+  newSocialsCount: number;
 }

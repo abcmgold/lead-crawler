@@ -59,7 +59,7 @@ function processInlineImages(htmlBody) {
 // Sends a personalized email to each lead/custom address sequentially, persisting emailStatus
 async function sendBulkEmails({ leadIds, customEmails, subject, body, attachments, smtp }) {
   const transporter = buildTransporter(smtp);
-  const leads = await dbRepo.getLeads();
+  const leads = await dbRepo.getAllLeadEmails();
 
   let leadsToSend = [];
 
@@ -73,7 +73,6 @@ async function sendBulkEmails({ leadIds, customEmails, subject, body, attachment
         id: 'custom_' + Math.random().toString(36).substr(2, 9),
         name: 'Khách hàng',
         email: email,
-        phone: 'Chưa rõ',
         website: 'Nhập thủ công',
         createdAt: new Date().toISOString(),
         emailStatus: 'Chưa gửi'
@@ -97,7 +96,6 @@ async function sendBulkEmails({ leadIds, customEmails, subject, body, attachment
     const personalizedBody = processedHtml
       .replace(/{{Name}}/g, lead.name)
       .replace(/{{Email}}/g, lead.email)
-      .replace(/{{Phone}}/g, lead.phone)
       .replace(/{{Website}}/g, lead.website);
 
     // Check if the body contains HTML tags to treat it as HTML
@@ -125,7 +123,7 @@ async function sendBulkEmails({ leadIds, customEmails, subject, body, attachment
 
     // Persist updated emailStatus for leads that exist in storage (skip ad-hoc custom emails)
     if (!lead.id.startsWith('custom_')) {
-      await dbRepo.updateLeadStatus(lead.id, lead.emailStatus);
+      await dbRepo.updateLeadEmailStatus(lead.id, lead.emailStatus);
     }
 
     // Delay slightly between sends

@@ -78,6 +78,13 @@ async function duckduckgoSearch(query) {
       validateStatus: (status) => status < 500
     });
 
+    // DDG sometimes serves an anti-bot "anomaly/botnet" challenge page instead of real results.
+    // Detect it explicitly so the caller knows this engine was blocked, not just empty.
+    if (response.status === 202 && /anomaly|botnet/i.test(response.data)) {
+      logSystem(`DuckDuckGo: bị chặn bởi cơ chế chống bot (trang anomaly/botnet challenge), không có kết quả.`, 'WARNING');
+      return [];
+    }
+
     let $ = cheerio.load(response.data);
     parseDdgResults($, urls, stats);
 
@@ -211,6 +218,61 @@ async function bingSearch(query) {
   return urls.slice(0, MAX_URLS);
 }
 
+// Helper to search Mojeek (third fallback source - low anti-bot, returns direct URLs)
+async function mojeekSearch(query) {
+  const urls = [];
+  let rawCount = 0;
+
+  for (let pageNum = 0; pageNum < 10; pageNum++) {
+    if (urls.length >= MAX_URLS) break;
+
+    const offset = pageNum * 10 + 1; // 1, 11, 21, ...
+    const searchUrl = pageNum === 0
+      ? `https://www.mojeek.com/search?q=${encodeURIComponent(query)}`
+      : `https://www.mojeek.com/search?q=${encodeURIComponent(query)}&s=${offset}`;
+
+    try {
+      const response = await axios.get(searchUrl, {
+        headers: {
+          'User-Agent': getRandomUserAgent(),
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'vi,en-US;q=0.9,en;q=0.8',
+        },
+        timeout: 10000,
+        validateStatus: (status) => status < 500
+      });
+
+      const $ = cheerio.load(response.data);
+      let pageLinksCount = 0;
+
+      $('a.title').each((i, el) => {
+        const href = $(el).attr('href');
+        if (href && href.startsWith('http') && !href.includes('mojeek.com') && !href.includes('google.com') && !href.includes('youtube.com') && !href.includes('facebook.com') && !href.includes('twitter.com') && !href.includes('instagram.com')) {
+          try {
+            new URL(href);
+            rawCount++;
+            if (!urls.includes(href)) {
+              urls.push(href);
+              pageLinksCount++;
+            }
+          } catch (e) { }
+        }
+      });
+
+      if (pageLinksCount === 0) break;
+
+      // Delay between page requests to avoid getting rate limited
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (err) {
+      logSystem(`Lỗi Mojeek Search trang ${pageNum + 1}: ${err.message}`, 'WARNING');
+      break;
+    }
+  }
+
+  logSystem(`Mojeek: ${rawCount} link thô tìm thấy, ${urls.length} URL duy nhất`, 'INFO');
+  return urls.slice(0, MAX_URLS);
+}
+
 function decodeCfEmail(encodedString) {
   try {
     let email = "";
@@ -225,19 +287,79 @@ function decodeCfEmail(encodedString) {
   }
 }
 
-function extractContacts(html, info) {
-  // Email regex
-  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,8}/g;
-  const emailsFound = html.match(emailRegex);
-  if (emailsFound) {
-    emailsFound.forEach(email => {
-      const cleanEmail = email.toLowerCase().trim();
-      const extension = cleanEmail.split('.').pop();
-      if (!['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(extension)) {
-        info.emails.push(cleanEmail);
+// Hostname patterns for the social platforms we collect links for
+const SOCIAL_PLATFORMS = {
+  facebook: /(^|\.)facebook\.com$/i,
+  tiktok: /(^|\.)tiktok\.com$/i,
+  linkedin: /(^|\.)linkedin\.com$/i,
+  youtube: /(^|\.)(youtube\.com|youtu\.be)$/i,
+  instagram: /(^|\.)instagram\.com$/i,
+};
+
+// Skip share/login/embed widget links that aren't a business's actual social profile
+const EXCLUDED_SOCIAL_PATH = /\/(sharer|share|intent|login|dialog|plugins|embed)/i;
+
+// Strips query/hash and trailing slash so the same profile doesn't get stored under multiple URLs
+function normalizeSocialUrl(absoluteUrl) {
+  absoluteUrl.search = '';
+  absoluteUrl.hash = '';
+  let href = absoluteUrl.href;
+  if (href.endsWith('/')) href = href.slice(0, -1);
+  return href;
+}
+
+// Scans all links on a page for known social media platforms
+function extractSocialLinks($, baseUrl, info) {
+  $('a[href]').each((i, el) => {
+    const href = $(el).attr('href');
+    if (!href) return;
+    try {
+      const absoluteUrl = new URL(href, baseUrl);
+      const hostname = absoluteUrl.hostname.toLowerCase().replace(/^www\./, '');
+      for (const [platform, regex] of Object.entries(SOCIAL_PLATFORMS)) {
+        if (regex.test(hostname)) {
+          if (EXCLUDED_SOCIAL_PATH.test(absoluteUrl.pathname)) return;
+          info.socials.push({ platform, url: normalizeSocialUrl(absoluteUrl) });
+          return;
+        }
       }
-    });
-  }
+    } catch (e) { }
+  });
+}
+
+function extractContacts(html, info) {
+  const $ = cheerio.load(html);
+
+  // 1. Extract from mailto: and tel: links directly
+  $('a[href]').each((i, el) => {
+    const href = $(el).attr('href');
+    if (!href) return;
+    if (href.startsWith('mailto:')) {
+      const email = href.replace(/^mailto:/i, '').split('?')[0].trim();
+      if (email) {
+        info.emails.push(email);
+      }
+    } else if (href.startsWith('tel:')) {
+      const phone = href.replace(/^tel:/i, '').split('?')[0].trim();
+      if (phone) {
+        info.phones.push(phone);
+      }
+    }
+  });
+
+  // 2. Extract from meta tags
+  $('meta[property="og:email"], meta[name="email"], meta[name="reply-to"]').each((i, el) => {
+    const content = $(el).attr('content');
+    if (content) {
+      info.emails.push(content.trim());
+    }
+  });
+  $('meta[property="og:phone_number"], meta[name="phone"], meta[name="contact"]').each((i, el) => {
+    const content = $(el).attr('content');
+    if (content) {
+      info.phones.push(content.trim());
+    }
+  });
 
   // Cloudflare Email Protection decoding
   const cfEmailRegex = /data-cfemail=["']([a-fA-F0-9]+)["']/gi;
@@ -254,13 +376,37 @@ function extractContacts(html, info) {
     }
   }
 
-  // Generic international phone regex:
-  // Matches phone numbers with optional country codes, area codes, and various delimiters (spaces, dots, dashes, parentheses).
-  // Uses negative lookbehind/lookahead to avoid matching numbers in decimals or long IDs.
+  // 3. Extract from visible text by removing code tags (script, style, etc.)
+  const textSource = $.clone();
+  textSource('script, style, noscript, iframe, svg, head').remove();
+  const cleanText = textSource.text();
+
+  // Email regex
+  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,8}/g;
+  const emailsFound = cleanText.match(emailRegex);
+  if (emailsFound) {
+    emailsFound.forEach(email => {
+      const cleanEmail = email.toLowerCase().trim();
+      const extension = cleanEmail.split('.').pop();
+      if (!['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(extension)) {
+        info.emails.push(cleanEmail);
+      }
+    });
+  }
+
+  // Generic international phone regex
   const phoneRegex = /(?<![\d.,])(?:\+\d{1,3}[ -.]?)?\(?\d{2,5}\)?[ -.]?\d{2,5}[ -.]?\d{2,5}[ -.]?\d{2,9}(?!\d)/g;
-  const phonesFound = html.match(phoneRegex);
+  const phonesFound = cleanText.match(phoneRegex);
   if (phonesFound) {
     phonesFound.forEach(phone => {
+      // Filter out clean unformatted numbers (no spaces, dashes, dots, or parentheses) 
+      // that do not start with '+' or '0' (e.g. random numerical IDs like "25952557")
+      const hasFormatting = /[\s\-\.\(\)]/.test(phone);
+      const startsWithPlusOrZero = /^[+0]/.test(phone.trim());
+      if (!hasFormatting && !startsWithPlusOrZero) {
+        return;
+      }
+
       // Normalize: strip spaces, dots, dashes, parentheses, keeping digits and '+'
       let cleanPhone = phone.replace(/[^\d+]/g, '');
       if (cleanPhone.startsWith('+84')) {
@@ -281,6 +427,7 @@ async function crawlWebsite(targetUrl) {
     title: '',
     emails: [],
     phones: [],
+    socials: [],
     status: 'failed',
     message: ''
   };
@@ -307,6 +454,7 @@ async function crawlWebsite(targetUrl) {
 
     // Search email and phone numbers on current page
     extractContacts(html, info);
+    extractSocialLinks($, targetUrl, info);
 
     // Smart Crawl: Search for Contact page link
     const contactLinks = [];
@@ -344,6 +492,7 @@ async function crawlWebsite(targetUrl) {
         });
         if (contactPageRes.status === 200) {
           extractContacts(contactPageRes.data, info);
+          extractSocialLinks(cheerio.load(contactPageRes.data), contactLinks[0], info);
         }
       } catch (e) {
         // Ignore contact page failure, stick to home page results
@@ -354,11 +503,15 @@ async function crawlWebsite(targetUrl) {
     info.emails = [...new Set(info.emails)];
     info.phones = [...new Set(info.phones)];
 
-    if (info.emails.length > 0 || info.phones.length > 0) {
+    const uniqueSocials = new Map();
+    info.socials.forEach(social => uniqueSocials.set(`${social.platform}|${social.url}`, social));
+    info.socials = [...uniqueSocials.values()];
+
+    if (info.emails.length > 0 || info.phones.length > 0 || info.socials.length > 0) {
       info.status = 'success';
     } else {
       info.status = 'no_contacts';
-      info.message = 'Không tìm thấy Email/Số điện thoại';
+      info.message = 'Không tìm thấy Email/Số điện thoại/Mạng xã hội';
     }
 
   } catch (err) {
@@ -424,10 +577,20 @@ async function performCrawl(keyword) {
       addUrls(ddgUrls);
     }
 
-    // 3. If results are still too few (engines likely got rate-limited/blocked), retry once
+    // 3. If still need more, try Mojeek (less aggressive anti-bot, returns direct URLs)
+    if (urls.length < MAX_URLS) {
+      logSystem(`Sau Bing+DDG: ${urls.length} kết quả. Tiếp tục tìm thêm từ Mojeek...`, 'INFO');
+      const mojeekUrls = await mojeekSearch(keyword);
+      logSystem(`Mojeek trả về ${mojeekUrls.length} URL`, 'INFO');
+      addUrls(mojeekUrls);
+    }
+
+    // 4. If results are still too few (engines likely got rate-limited/blocked), retry once
     if (urls.length < MIN_URLS_BEFORE_RETRY) {
       logSystem(`Chỉ tìm được ${urls.length} URL (dưới ngưỡng ${MIN_URLS_BEFORE_RETRY}). Thử tìm lại lần 2...`, 'WARNING');
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait longer with jitter (4-7s) before retrying - a flat 2s delay rarely helps
+      // when an engine is actively serving an anti-bot challenge.
+      await new Promise(resolve => setTimeout(resolve, 4000 + Math.random() * 3000));
 
       const bingRetryUrls = await bingSearch(keyword);
       logSystem(`Bing (lần 2) trả về ${bingRetryUrls.length} URL`, 'INFO');
@@ -437,6 +600,12 @@ async function performCrawl(keyword) {
         const ddgRetryUrls = await duckduckgoSearch(keyword);
         logSystem(`DuckDuckGo (lần 2) trả về ${ddgRetryUrls.length} URL`, 'INFO');
         addUrls(ddgRetryUrls);
+      }
+
+      if (urls.length < MAX_URLS) {
+        const mojeekRetryUrls = await mojeekSearch(keyword);
+        logSystem(`Mojeek (lần 2) trả về ${mojeekRetryUrls.length} URL`, 'INFO');
+        addUrls(mojeekRetryUrls);
       }
     }
 
@@ -450,16 +619,24 @@ async function performCrawl(keyword) {
 
   const logId = '_' + Math.random().toString(36).substr(2, 9);
   const results = [];
-  let newLeadsCount = 0;
+  let newEmailsCount = 0;
+  let newPhonesCount = 0;
+  let newSocialsCount = 0;
 
-  // Retrieve all existing emails in the database before starting the crawl session
-  const existingEmails = new Set((await dbRepo.getLeads()).map(l => l.email.toLowerCase()));
-  const addedInSession = new Set();
+  // Retrieve all existing emails/phones/socials in the database before starting the crawl session
+  const dedupeSets = {
+    existingEmails: await dbRepo.getAllLeadEmailAddresses(),
+    addedEmails: new Set(),
+    existingPhones: await dbRepo.getAllLeadPhoneNumbers(),
+    addedPhones: new Set(),
+    existingSocials: await dbRepo.getAllLeadSocialKeys(),
+    addedSocials: new Set()
+  };
 
   // Crawl websites concurrently in parallel batches (concurrency: 15) to speed up drastically and prevent HTTP timeouts
   const concurrencyLimit = 15;
   const queue = [...urls];
-  
+
   const workers = Array(Math.min(concurrencyLimit, queue.length)).fill(null).map(async () => {
     while (queue.length > 0) {
       const url = queue.shift();
@@ -468,10 +645,10 @@ async function performCrawl(keyword) {
         results.push(crawled);
         logSystem(`Crawl website: ${url} | Trạng thái: ${crawled.status} | Emails tìm thấy: ${crawled.emails.length}`, 'INFO');
 
-        if (crawled.status === 'success') {
-          const added = await leadService.addLeadsFromCrawl(crawled, keyword, logId, existingEmails, addedInSession);
-          newLeadsCount += added;
-        }
+        const { newEmails, newPhones, newSocials } = await leadService.recordCrawlResult(crawled, keyword, logId, dedupeSets);
+        newEmailsCount += newEmails;
+        newPhonesCount += newPhones;
+        newSocialsCount += newSocials;
       } catch (err) {
         logSystem(`Lỗi khi cào URL ${url}: ${err.message}`, 'WARNING');
       }
@@ -485,18 +662,21 @@ async function performCrawl(keyword) {
     keyword,
     timestamp: new Date().toISOString(),
     urlsCount: urls.length,
-    newLeadsCount
+    newEmailsCount,
+    newPhonesCount,
+    newSocialsCount
   });
 
-  logSystem(`Hoàn tất cào cho từ khóa: "${keyword}". Thêm mới ${newLeadsCount} Leads vào CSDL.`, 'INFO');
+  logSystem(`Hoàn tất cào cho từ khóa: "${keyword}". Thêm mới ${newEmailsCount} email, ${newPhonesCount} SĐT, ${newSocialsCount} mạng xã hội vào CSDL.`, 'INFO');
 
-  return { success: true, count: results.length, newLeadsCount, results };
+  return { success: true, count: results.length, newEmailsCount, newPhonesCount, newSocialsCount, results };
 }
 
 
 module.exports = {
   duckduckgoSearch,
   bingSearch,
+  mojeekSearch,
   crawlWebsite,
   extractContacts,
   getDirectUrl,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Send, X, Paperclip, Loader2, PlayCircle, Layers, Plus, Edit, Trash2, FileText, ClipboardList } from 'lucide-react';
-import { Lead, SmtpSettings, HistoryItem } from './types';
+import { LeadEmail, SmtpSettings, HistoryItem } from './types';
 import { apiFetch } from '@/lib/api';
 import RichTextEditor from './RichTextEditor';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
@@ -10,9 +10,9 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 
 interface CampaignTabProps {
-  selectedLeads: Lead[];
+  selectedLeads: LeadEmail[];
   onRemoveLead: (id: string) => void;
-  onSelectLeads: (leads: Lead[]) => void;
+  onSelectLeads: (leads: LeadEmail[]) => void;
   smtpSettings: SmtpSettings;
   showToast: (message: string, isError?: boolean) => void;
   refreshLeads: () => void;
@@ -97,7 +97,7 @@ export default function CampaignTab({ selectedLeads, onRemoveLead, onSelectLeads
     if (!log) return;
 
     try {
-      const res = await apiFetch(`/api/leads?crawlLogId=${logId}`);
+      const res = await apiFetch(`/api/leads/emails?crawlLogId=${logId}`);
       if (!res.ok) throw new Error();
       const matchingLeads = await res.json();
 
@@ -339,7 +339,7 @@ export default function CampaignTab({ selectedLeads, onRemoveLead, onSelectLeads
                   Soạn Thảo Chiến Dịch Email
                 </h3>
                 <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                  Thiết lập mẫu email gửi hàng loạt. Bạn có thể sử dụng các thẻ động: <code className="text-primary font-mono">{`{{Name}}`}</code>, <code className="text-primary font-mono">{`{{Email}}`}</code>, <code className="text-primary font-mono">{`{{Phone}}`}</code>, <code className="text-primary font-mono">{`{{Website}}`}</code>.
+                  Thiết lập mẫu email gửi hàng loạt. Bạn có thể sử dụng các thẻ động: <code className="text-primary font-mono">{`{{Name}}`}</code>, <code className="text-primary font-mono">{`{{Email}}`}</code>, <code className="text-primary font-mono">{`{{Website}}`}</code>.
                 </p>
               </div>
 
@@ -452,7 +452,7 @@ export default function CampaignTab({ selectedLeads, onRemoveLead, onSelectLeads
                         });
                         return {
                           value: log.id,
-                          label: `${log.keyword} (${dateStr}) — ${log.newLeadsCount} leads`
+                          label: `${log.keyword} (${dateStr}) — ${log.newEmailsCount} emails`
                         };
                       })}
                     />
@@ -673,7 +673,7 @@ export default function CampaignTab({ selectedLeads, onRemoveLead, onSelectLeads
 // Memoized Subcomponents to prevent re-renders when typing
 
 interface SelectedLeadsListProps {
-  selectedLeads: Lead[];
+  selectedLeads: LeadEmail[];
   onRemoveLead: (id: string) => void;
   isSending: boolean;
 }

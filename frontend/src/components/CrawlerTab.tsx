@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Loader2, Clock, Trash2, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
-import { HistoryItem, Lead } from './types';
+import { HistoryItem } from './types';
 import { apiFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import ConfirmDialog from './ConfirmDialog';
@@ -36,55 +36,6 @@ export default function CrawlerTab({ onCrawlSuccess, showToast }: CrawlerTabProp
   // Leads details modal states
   const [selectedCrawlLog, setSelectedCrawlLog] = useState<HistoryItem | null>(null);
   const [showLogLeadsModal, setShowLogLeadsModal] = useState(false);
-  const [modalCurrentPage, setModalCurrentPage] = useState(1);
-
-  const [modalLeads, setModalLeads] = useState<Lead[]>([]);
-  const [modalTotalCount, setModalTotalCount] = useState(0);
-  const [modalLoading, setModalLoading] = useState(false);
-
-  const modalPageSize = 10;
-
-  useEffect(() => {
-    if (!selectedCrawlLog) {
-      setModalLeads([]);
-      setModalTotalCount(0);
-      return;
-    }
-
-    const fetchModalLeads = async () => {
-      setModalLoading(true);
-      try {
-        const queryParams = new URLSearchParams({
-          page: String(modalCurrentPage),
-          limit: String(modalPageSize),
-          crawlLogId: selectedCrawlLog.id
-        });
-        const res = await apiFetch(`/api/leads?${queryParams.toString()}`);
-        if (res.ok) {
-          const data = await res.json();
-          setModalLeads(data.leads || []);
-          setModalTotalCount(data.total || 0);
-        }
-      } catch (err) {
-        console.error('Lỗi khi tải leads của phiên cào:', err);
-      } finally {
-        setModalLoading(false);
-      }
-    };
-
-    fetchModalLeads();
-  }, [selectedCrawlLog, modalCurrentPage]);
-
-  useEffect(() => {
-    setModalCurrentPage(1);
-  }, [selectedCrawlLog]);
-
-  const modalTotalPages = Math.max(1, Math.ceil(modalTotalCount / modalPageSize));
-  const safeModalPage = Math.min(modalCurrentPage, modalTotalPages);
-
-  const goToModalPage = (page: number) => {
-    if (page >= 1 && page <= modalTotalPages) setModalCurrentPage(page);
-  };
 
   const consoleContainerRef = useRef<HTMLDivElement>(null);
 
@@ -166,19 +117,21 @@ export default function CrawlerTab({ onCrawlSuccess, showToast }: CrawlerTabProp
         setCrawlStatus('Hoàn thành');
         addLog('=== KẾT QUẢ CÀO DỮ LIỆU ===', 'success');
 
-        const leadsFound = data.newLeadsCount || 0;
+        const newEmailsCount = data.newEmailsCount || 0;
+        const newPhonesCount = data.newPhonesCount || 0;
+        const newSocialsCount = data.newSocialsCount || 0;
         if (data.results) {
           (data.results as any[]).forEach(site => {
             if (site.status === 'success') {
-              addLog(`[THÀNH CÔNG] ${site.title} (${site.url}): tìm thấy ${site.emails?.length || 0} email, ${site.phones?.length || 0} sđt.`, 'success');
+              addLog(`[THÀNH CÔNG] ${site.title} (${site.url}): tìm thấy ${site.emails?.length || 0} email, ${site.phones?.length || 0} sđt, ${site.socials?.length || 0} mxh.`, 'success');
             } else {
               addLog(`[KHÔNG CÓ DATA] ${site.url}: ${site.message || 'Không tìm thấy liên hệ'}`, 'warning');
             }
           });
         }
 
-        addLog(`Hoàn thành. Tìm thấy tổng cộng ${leadsFound} lead mới.`, 'success');
-        showToast(`Đã cào xong! Tìm thấy ${leadsFound} leads mới.`);
+        addLog(`Hoàn thành. Tìm thấy mới: ${newEmailsCount} email, ${newPhonesCount} sđt, ${newSocialsCount} mxh.`, 'success');
+        showToast(`Đã cào xong! Tìm thấy mới: ${newEmailsCount} email, ${newPhonesCount} sđt, ${newSocialsCount} mxh.`);
         onCrawlSuccess(); // reload leads list in main state
         loadHistory(1);
         setHistoryPage(1);
@@ -303,13 +256,6 @@ export default function CrawlerTab({ onCrawlSuccess, showToast }: CrawlerTabProp
       <CrawlLeadsModal
         open={showLogLeadsModal}
         crawlLog={selectedCrawlLog}
-        leads={modalLeads}
-        loading={modalLoading}
-        totalCount={modalTotalCount}
-        currentPage={safeModalPage}
-        totalPages={modalTotalPages}
-        pageSize={modalPageSize}
-        onPageChange={goToModalPage}
         onClose={() => setShowLogLeadsModal(false)}
       />
     </div>
@@ -354,9 +300,9 @@ const ProgressCard = React.memo(function ProgressCard({
           {getStatusIcon()}
           Tiến Trình Cào Dữ Liệu
         </h4>
-        <span className={`text-xs px-3 py-1 rounded-full font-semibold border ${crawlStatus === 'Hoàn thành' ? 'bg-emerald-950/30 text-emerald-400 border-emerald-500/20' :
-          crawlStatus === 'Lỗi' ? 'bg-rose-950/30 text-rose-400 border-rose-500/20' :
-            'bg-primary/20 text-primary border-primary/20 animate-pulse'
+        <span className={`text-xs px-3 py-1 rounded-full font-semibold border transition-all duration-300 ${crawlStatus === 'Hoàn thành' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.05)]' :
+          crawlStatus === 'Lỗi' ? 'bg-rose-500/10 text-rose-400 border-rose-500/30 shadow-[0_0_12px_rgba(239,68,68,0.05)]' :
+            'bg-primary/10 text-primary border-primary/30 animate-pulse'
           }`}>
           {crawlStatus}
         </span>
@@ -454,9 +400,23 @@ const HistoryCard = React.memo(function HistoryCard({
             cellClassName: "px-5 py-4 text-slate-400 font-mono",
           },
           {
-            id: 'newLeadsCount',
-            header: "Số Leads mới",
-            accessor: (log) => `+${log.newLeadsCount} Leads`,
+            id: 'newEmailsCount',
+            header: "Email mới",
+            accessor: (log) => `+${log.newEmailsCount}`,
+            className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
+            cellClassName: "px-5 py-4 text-emerald-400 font-semibold font-mono",
+          },
+          {
+            id: 'newPhonesCount',
+            header: "SĐT mới",
+            accessor: (log) => `+${log.newPhonesCount}`,
+            className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
+            cellClassName: "px-5 py-4 text-emerald-400 font-semibold font-mono",
+          },
+          {
+            id: 'newSocialsCount',
+            header: "MXH mới",
+            accessor: (log) => `+${log.newSocialsCount}`,
             className: "px-5 py-4 font-semibold font-sans text-xs uppercase text-slate-400",
             cellClassName: "px-5 py-4 text-emerald-400 font-semibold font-mono",
           }

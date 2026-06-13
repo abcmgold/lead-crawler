@@ -1,44 +1,49 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Download, Trash2, Search, ExternalLink, ChevronFirst, ChevronLast } from 'lucide-react';
-import { Lead, HistoryItem } from './types';
+import { Trash2, ExternalLink } from 'lucide-react';
+import { LeadEmail, LeadPhone, LeadSocial, HistoryItem } from './types';
 import { apiFetch } from '@/lib/api';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
-import { DataTable, Column } from '@/components/ui/data-table';
+import { Column } from '@/components/ui/data-table';
 import { CustomSelect } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useLeadListData } from '@/hooks/useLeadListData';
+import { LeadDataTab } from './LeadDataTab';
 
 interface LeadsTabProps {
   leadsVersion: number;
   leadsCount: number;
   selectedIds: Set<string>;
-  onSelectionChange: (ids: Set<string>, currentLeads: Lead[]) => void;
+  onSelectionChange: (ids: Set<string>, currentLeads: LeadEmail[]) => void;
   onClearAll: () => void;
   showToast: (message: string, isError?: boolean) => void;
 }
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
+const SOCIAL_PLATFORM_LABELS: Record<string, string> = {
+  facebook: 'Facebook',
+  tiktok: 'TikTok',
+  linkedin: 'LinkedIn',
+  youtube: 'YouTube',
+  instagram: 'Instagram',
+};
+
+function downloadCSV(filename: string, header: string, rows: string[][]) {
+  let csvContent = "﻿" + header + "\n"; // UTF-8 BOM
+  rows.forEach(row => {
+    csvContent += row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(",") + "\n";
+  });
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 
 export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSelectionChange, onClearAll, showToast }: LeadsTabProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState<number>(25);
   const [crawlLogs, setCrawlLogs] = useState<HistoryItem[]>([]);
   const [selectedLogId, setSelectedLogId] = useState<string>('');
-
-  // Local paginated leads data
-  const [paginatedLeads, setPaginatedLeads] = useState<Lead[]>([]);
-  const [totalLeadsCount, setTotalLeadsCount] = useState(0);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadCrawlLogs();
@@ -56,76 +61,20 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
     }
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearchQuery(searchTerm);
-      setCurrentPage(1);
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+  const emails = useLeadListData<LeadEmail>({ endpoint: '/api/leads/emails', leadsVersion, crawlLogId: selectedLogId });
+  const phones = useLeadListData<LeadPhone>({ endpoint: '/api/leads/phones', leadsVersion, crawlLogId: selectedLogId });
+  const socials = useLeadListData<LeadSocial>({ endpoint: '/api/leads/socials', leadsVersion, crawlLogId: selectedLogId });
 
-  const fetchPaginatedLeads = async () => {
-    setLoading(true);
-    try {
-      const queryParams = new URLSearchParams({
-        page: String(currentPage),
-        limit: String(pageSize),
-        search: searchQuery,
-        crawlLogId: selectedLogId
-      });
-      const res = await apiFetch(`/api/leads?${queryParams.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        setPaginatedLeads(data.leads || []);
-        setTotalLeadsCount(data.total || 0);
-      }
-    } catch (err) {
-      console.error('Lỗi khi tải dữ liệu leads phân trang:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch data whenever pagination parameters change, or new leads are crawled
-  // (CrawlerTab triggers parent leads update via leadsVersion)
-  useEffect(() => {
-    fetchPaginatedLeads();
-  }, [currentPage, pageSize, searchQuery, selectedLogId, leadsVersion]);
-
-  const isAllFilteredSelected = paginatedLeads.length > 0 && paginatedLeads.every(l => selectedIds.has(l.id));
-
-  // Pagination calculations
-  const totalPages = Math.max(1, Math.ceil(totalLeadsCount / pageSize));
-  const safePage = Math.min(currentPage, totalPages);
-  const pagedLeads = paginatedLeads;
-  const startIndex = (safePage - 1) * pageSize;
-
-  const goToPage = (page: number) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
-  };
-
-  // Build page number buttons with ellipsis
-  const getPageNumbers = (): (number | 'ellipsis')[] => {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    const pages: (number | 'ellipsis')[] = [];
-    if (safePage <= 4) {
-      pages.push(1, 2, 3, 4, 5, 'ellipsis', totalPages);
-    } else if (safePage >= totalPages - 3) {
-      pages.push(1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-    } else {
-      pages.push(1, 'ellipsis', safePage - 1, safePage, safePage + 1, 'ellipsis', totalPages);
-    }
-    return pages;
-  };
+  const isAllFilteredSelected = emails.data.length > 0 && emails.data.every(l => selectedIds.has(l.id));
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     const nextSelected = new Set(selectedIds);
     if (e.target.checked) {
-      paginatedLeads.forEach(l => nextSelected.add(l.id));
+      emails.data.forEach(l => nextSelected.add(l.id));
     } else {
-      paginatedLeads.forEach(l => nextSelected.delete(l.id));
+      emails.data.forEach(l => nextSelected.delete(l.id));
     }
-    onSelectionChange(nextSelected, paginatedLeads);
+    onSelectionChange(nextSelected, emails.data);
   };
 
   const handleSelectOne = (id: string, checked: boolean) => {
@@ -135,10 +84,10 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
     } else {
       nextSelected.delete(id);
     }
-    onSelectionChange(nextSelected, paginatedLeads);
+    onSelectionChange(nextSelected, emails.data);
   };
 
-  const columns = useMemo<Column<Lead>[]>(() => [
+  const emailColumns = useMemo<Column<LeadEmail>[]>(() => [
     {
       id: 'select',
       header: (
@@ -180,20 +129,13 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
       accessor: (lead) => (
         <code
           title={lead.email}
-          className="text-primary font-mono text-xs select-all bg-primary/5 px-2 py-1 rounded border border-primary/10 block truncate max-w-[180px]"
+          className="text-primary font-mono text-xs select-all bg-primary/5 px-2 py-1 rounded border border-primary/10 block truncate max-w-[220px]"
         >
           {lead.email}
         </code>
       ),
       className: "px-6 py-4 font-semibold font-sans",
-      cellClassName: "px-6 py-4 max-w-[200px]",
-    },
-    {
-      id: 'phone',
-      header: "Số điện thoại",
-      accessor: (lead) => lead.phone || '—',
-      className: "px-6 py-4 font-semibold font-sans",
-      cellClassName: "px-6 py-4 text-slate-400 font-mono text-xs",
+      cellClassName: "px-6 py-4 max-w-[240px]",
     },
     {
       id: 'website',
@@ -220,7 +162,7 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
       accessor: (lead) => {
         const isSuccess = lead.emailStatus === 'Gửi thành công';
         const isFailed = lead.emailStatus.startsWith('Thất bại');
-        
+
         return (
           <span className={`text-xs px-2.5 py-1 rounded-full font-semibold border font-sans inline-flex items-center gap-1.5 shrink-0 ${
             isSuccess ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25 shadow-[0_0_12px_rgba(16,185,129,0.05)]' :
@@ -239,47 +181,145 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
       className: "px-6 py-4 font-semibold text-right font-sans",
       cellClassName: "px-6 py-4 text-right",
     }
-  ], [isAllFilteredSelected, selectedIds, handleSelectAll, handleSelectOne]);
+  ], [isAllFilteredSelected, selectedIds]);
 
-  const handleExportCSV = async () => {
+  const phoneColumns = useMemo<Column<LeadPhone>[]>(() => [
+    {
+      id: 'name',
+      header: "Doanh Nghiệp / Site",
+      accessor: (lead) => lead.name,
+      className: "px-6 py-4 font-semibold font-sans",
+      cellClassName: "px-6 py-4 font-semibold text-slate-200 max-w-[200px] truncate font-sans",
+    },
+    {
+      id: 'phone',
+      header: "Số điện thoại",
+      accessor: (lead) => lead.phone,
+      className: "px-6 py-4 font-semibold font-sans",
+      cellClassName: "px-6 py-4 text-slate-200 font-mono text-xs",
+    },
+    {
+      id: 'website',
+      header: "Website",
+      accessor: (lead) => (
+        <a
+          href={lead.website}
+          target="_blank"
+          rel="noreferrer"
+          title={lead.website}
+          className="text-slate-400 hover:text-primary inline-flex items-center gap-1.5 hover:underline transition-colors duration-150 font-sans max-w-[180px]"
+        >
+          <span className="truncate">{lead.website}</span>
+          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+        </a>
+      ),
+      className: "px-6 py-4 font-semibold font-sans",
+      cellClassName: "px-6 py-4 max-w-[200px]",
+    },
+    {
+      id: 'keyword',
+      header: "Từ khóa",
+      accessor: (lead) => lead.keyword || '—',
+      className: "px-6 py-4 font-semibold font-sans",
+      cellClassName: "px-6 py-4 text-slate-400 font-mono text-xs max-w-[160px] truncate",
+    },
+    {
+      id: 'createdAt',
+      header: "Ngày tạo",
+      accessor: (lead) => new Date(lead.createdAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+      className: "px-6 py-4 font-semibold text-right font-sans",
+      cellClassName: "px-6 py-4 text-right text-slate-400 font-mono text-xs",
+    }
+  ], []);
+
+  const socialColumns = useMemo<Column<LeadSocial>[]>(() => [
+    {
+      id: 'name',
+      header: "Doanh Nghiệp / Site",
+      accessor: (lead) => lead.name,
+      className: "px-6 py-4 font-semibold font-sans",
+      cellClassName: "px-6 py-4 font-semibold text-slate-200 max-w-[200px] truncate font-sans",
+    },
+    {
+      id: 'platform',
+      header: "Nền tảng",
+      accessor: (lead) => (
+        <span className="text-xs px-2.5 py-1 rounded-full font-semibold border bg-primary/10 text-primary border-primary/20 font-sans">
+          {SOCIAL_PLATFORM_LABELS[lead.platform] || lead.platform}
+        </span>
+      ),
+      className: "px-6 py-4 font-semibold font-sans",
+      cellClassName: "px-6 py-4",
+    },
+    {
+      id: 'url',
+      header: "Đường dẫn",
+      accessor: (lead) => (
+        <a
+          href={lead.url}
+          target="_blank"
+          rel="noreferrer"
+          title={lead.url}
+          className="text-slate-400 hover:text-primary inline-flex items-center gap-1.5 hover:underline transition-colors duration-150 font-sans max-w-[260px]"
+        >
+          <span className="truncate">{lead.url}</span>
+          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+        </a>
+      ),
+      className: "px-6 py-4 font-semibold font-sans",
+      cellClassName: "px-6 py-4 max-w-[280px]",
+    },
+    {
+      id: 'website',
+      header: "Website",
+      accessor: (lead) => (
+        <a
+          href={lead.website}
+          target="_blank"
+          rel="noreferrer"
+          title={lead.website}
+          className="text-slate-400 hover:text-primary inline-flex items-center gap-1.5 hover:underline transition-colors duration-150 font-sans max-w-[180px]"
+        >
+          <span className="truncate">{lead.website}</span>
+          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+        </a>
+      ),
+      className: "px-6 py-4 font-semibold font-sans",
+      cellClassName: "px-6 py-4 max-w-[200px]",
+    },
+    {
+      id: 'keyword',
+      header: "Từ khóa",
+      accessor: (lead) => lead.keyword || '—',
+      className: "px-6 py-4 font-semibold font-sans",
+      cellClassName: "px-6 py-4 text-slate-400 font-mono text-xs max-w-[160px] truncate",
+    },
+    {
+      id: 'createdAt',
+      header: "Ngày tạo",
+      accessor: (lead) => new Date(lead.createdAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+      className: "px-6 py-4 font-semibold text-right font-sans",
+      cellClassName: "px-6 py-4 text-right text-slate-400 font-mono text-xs",
+    }
+  ], []);
+
+  const handleExportEmailsCSV = async () => {
     try {
-      const queryParams = new URLSearchParams({
-        search: searchQuery,
-        crawlLogId: selectedLogId
-      });
-      const res = await apiFetch(`/api/leads?${queryParams.toString()}`);
+      const queryParams = new URLSearchParams({ search: emails.searchTerm, crawlLogId: selectedLogId });
+      const res = await apiFetch(`/api/leads/emails?${queryParams.toString()}`);
       if (!res.ok) throw new Error('Không thể tải dữ liệu để xuất');
-      const exportLeads: Lead[] = await res.json();
+      const exportLeads: LeadEmail[] = await res.json();
 
       if (exportLeads.length === 0) {
         showToast('Không có dữ liệu để xuất!', true);
         return;
       }
 
-      let csvContent = "\uFEFF"; // UTF-8 BOM
-      csvContent += "Tên Doanh Nghiệp,Email,Số điện thoại,Website,Trạng thái Email,Từ khóa,Ngày tạo\n";
-
-      exportLeads.forEach(lead => {
-        const row = [
-          `"${lead.name.replace(/"/g, '""')}"`,
-          `"${lead.email}"`,
-          `"${lead.phone || ''}"`,
-          `"${lead.website}"`,
-          `"${lead.emailStatus}"`,
-          `"${lead.keyword}"`,
-          `"${lead.createdAt}"`
-        ].join(",");
-        csvContent += row + "\n";
-      });
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `leads_export_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      downloadCSV(
+        `leads_email_export_${new Date().toISOString().slice(0, 10)}.csv`,
+        "Tên Doanh Nghiệp,Email,Website,Trạng thái Email,Từ khóa,Ngày tạo",
+        exportLeads.map(lead => [lead.name, lead.email, lead.website, lead.emailStatus, lead.keyword, lead.createdAt])
+      );
       showToast('Đã tải xuống file CSV thành công!');
     } catch (err) {
       console.error(err);
@@ -287,104 +327,170 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
     }
   };
 
+  const handleExportPhonesCSV = async () => {
+    try {
+      const queryParams = new URLSearchParams({ search: phones.searchTerm, crawlLogId: selectedLogId });
+      const res = await apiFetch(`/api/leads/phones?${queryParams.toString()}`);
+      if (!res.ok) throw new Error('Không thể tải dữ liệu để xuất');
+      const exportLeads: LeadPhone[] = await res.json();
 
+      if (exportLeads.length === 0) {
+        showToast('Không có dữ liệu để xuất!', true);
+        return;
+      }
+
+      downloadCSV(
+        `leads_phone_export_${new Date().toISOString().slice(0, 10)}.csv`,
+        "Tên Doanh Nghiệp,Số điện thoại,Website,Từ khóa,Ngày tạo",
+        exportLeads.map(lead => [lead.name, lead.phone, lead.website, lead.keyword, lead.createdAt])
+      );
+      showToast('Đã tải xuống file CSV thành công!');
+    } catch (err) {
+      console.error(err);
+      showToast('Có lỗi xảy ra khi xuất file CSV!', true);
+    }
+  };
+
+  const handleExportSocialsCSV = async () => {
+    try {
+      const queryParams = new URLSearchParams({ search: socials.searchTerm, crawlLogId: selectedLogId });
+      const res = await apiFetch(`/api/leads/socials?${queryParams.toString()}`);
+      if (!res.ok) throw new Error('Không thể tải dữ liệu để xuất');
+      const exportLeads: LeadSocial[] = await res.json();
+
+      if (exportLeads.length === 0) {
+        showToast('Không có dữ liệu để xuất!', true);
+        return;
+      }
+
+      downloadCSV(
+        `leads_social_export_${new Date().toISOString().slice(0, 10)}.csv`,
+        "Tên Doanh Nghiệp,Nền tảng,Đường dẫn,Website,Từ khóa,Ngày tạo",
+        exportLeads.map(lead => [lead.name, SOCIAL_PLATFORM_LABELS[lead.platform] || lead.platform, lead.url, lead.website, lead.keyword, lead.createdAt])
+      );
+      showToast('Đã tải xuống file CSV thành công!');
+    } catch (err) {
+      console.error(err);
+      showToast('Có lỗi xảy ra khi xuất file CSV!', true);
+    }
+  };
+
+  const crawlLogFilter = (
+    <CustomSelect
+      value={selectedLogId || "all"}
+      onValueChange={(val) => setSelectedLogId(val === "all" ? "" : val)}
+      placeholder="-- Lọc theo lần cào --"
+      className="w-full sm:w-[260px] shrink-0"
+      triggerClassName="bg-slate-950/40"
+      options={[
+        { value: "all", label: "-- Lọc theo lần cào --" },
+        ...crawlLogs.map(log => {
+          const dateStr = new Date(log.timestamp).toLocaleString('vi-VN', {
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric'
+          });
+          return {
+            value: log.id,
+            label: `${log.keyword} (${dateStr})`
+          };
+        })
+      ]}
+    />
+  );
 
   return (
     <div className="space-y-6 animate-scale-in">
       {/* Top filters and actions */}
       <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
-        {/* Filters Wrapper */}
-        <div className="flex flex-col sm:flex-row gap-3 flex-1 max-w-2xl">
-          {/* Search */}
-          <div className="relative flex-1">
-            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-              <Search className="w-5 h-5" />
-            </span>
-            <Input
-              type="text"
-              className="pl-11"
-              placeholder="Lọc theo Tên, Email, Số điện thoại..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+        {crawlLogFilter}
 
-          {/* Crawl Batch Filter */}
-          <CustomSelect
-            value={selectedLogId || "all"}
-            onValueChange={(val) => {
-              setSelectedLogId(val === "all" ? "" : val);
-              setCurrentPage(1);
-            }}
-            placeholder="-- Lọc theo lần cào --"
-            className="w-full sm:w-[240px] shrink-0"
-            triggerClassName="bg-slate-950/40"
-            options={[
-              { value: "all", label: "-- Lọc theo lần cào --" },
-              ...crawlLogs.map(log => {
-                const dateStr = new Date(log.timestamp).toLocaleString('vi-VN', {
-                  month: 'numeric',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: 'numeric'
-                });
-                return {
-                  value: log.id,
-                  label: `${log.keyword} (${dateStr}) — ${log.newLeadsCount} leads`
-                };
-              })
-            ]}
-          />
-        </div>
-
-        {/* Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:justify-end shrink-0">
-          <Button
-            variant="outline"
-            size="md-xl"
-            onClick={handleExportCSV}
-          >
-            <Download className="w-4 h-4" />
-            Xuất CSV
-          </Button>
-          <Button
-            variant="destructive"
-            size="md-xl"
-            onClick={onClearAll}
-          >
-            <Trash2 className="w-4 h-4" />
-            Xóa tất cả
-          </Button>
-        </div>
+        <Button
+          variant="destructive"
+          size="md-xl"
+          onClick={onClearAll}
+          className="shrink-0"
+        >
+          <Trash2 className="w-4 h-4" />
+          Xóa tất cả
+        </Button>
       </div>
 
-      {/* Main Table */}
-      <DataTable
-        columns={columns}
-        data={pagedLeads}
-        keyExtractor={(lead) => lead.id}
-        onRowClick={(lead) => handleSelectOne(lead.id, !selectedIds.has(lead.id))}
-        rowClassName={(lead) => {
-          const isSelected = selectedIds.has(lead.id);
-          return `border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer ${isSelected ? 'bg-primary/[0.03]' : ''}`;
-        }}
-        emptyState={totalLeadsCount === 0 ? 'Chưa có leads nào. Hãy quét từ khóa ở tab cào.' : 'Không tìm thấy kết quả phù hợp.'}
-        containerClassName="relative w-full overflow-x-auto glass-panel rounded-2xl shadow-xl border border-white/5"
-        className="w-full text-sm text-left text-slate-300 border-collapse"
-        loading={loading}
-        pagination={{
-          currentPage: safePage,
-          totalPages: totalPages,
-          totalCount: totalLeadsCount,
-          pageSize: pageSize,
-          onPageChange: goToPage,
-          itemLabel: "leads",
-          totalAllLeadsCount: leadsCount,
-          selectedCount: selectedIds.size,
-          pageSizeOptions: PAGE_SIZE_OPTIONS,
-          onPageSizeChange: (size) => { setPageSize(size); setCurrentPage(1); }
-        }}
-      />
+      <Tabs defaultValue="emails">
+        <TabsList>
+          <TabsTrigger value="emails">Email ({emails.totalCount})</TabsTrigger>
+          <TabsTrigger value="phones">Số điện thoại ({phones.totalCount})</TabsTrigger>
+          <TabsTrigger value="socials">Mạng xã hội ({socials.totalCount})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="emails" className="mt-4">
+          <LeadDataTab<LeadEmail>
+            columns={emailColumns}
+            data={emails.data}
+            totalCount={emails.totalCount}
+            loading={emails.loading}
+            keyExtractor={(lead) => lead.id}
+            searchTerm={emails.searchTerm}
+            onSearchChange={emails.setSearchTerm}
+            searchPlaceholder="Lọc theo Tên, Email, Website..."
+            emptyState={leadsCount === 0 ? 'Chưa có leads nào. Hãy quét từ khóa ở tab cào.' : 'Không tìm thấy kết quả phù hợp.'}
+            currentPage={emails.currentPage}
+            totalPages={emails.totalPages}
+            pageSize={emails.pageSize}
+            onPageChange={emails.goToPage}
+            onPageSizeChange={(size) => emails.setPageSize(size)}
+            onExportCSV={handleExportEmailsCSV}
+            onRowClick={(lead) => handleSelectOne(lead.id, !selectedIds.has(lead.id))}
+            rowClassName={(lead) => {
+              const isSelected = selectedIds.has(lead.id);
+              return `cursor-pointer ${isSelected ? 'bg-primary/[0.03]' : ''}`;
+            }}
+            totalAllLeadsCount={leadsCount}
+            selectedCount={selectedIds.size}
+          />
+        </TabsContent>
+
+        <TabsContent value="phones" className="mt-4">
+          <LeadDataTab<LeadPhone>
+            columns={phoneColumns}
+            data={phones.data}
+            totalCount={phones.totalCount}
+            loading={phones.loading}
+            keyExtractor={(lead) => lead.id}
+            searchTerm={phones.searchTerm}
+            onSearchChange={phones.setSearchTerm}
+            searchPlaceholder="Lọc theo Tên, Số điện thoại, Website..."
+            emptyState="Chưa có số điện thoại nào được tìm thấy."
+            currentPage={phones.currentPage}
+            totalPages={phones.totalPages}
+            pageSize={phones.pageSize}
+            onPageChange={phones.goToPage}
+            onPageSizeChange={(size) => phones.setPageSize(size)}
+            onExportCSV={handleExportPhonesCSV}
+          />
+        </TabsContent>
+
+        <TabsContent value="socials" className="mt-4">
+          <LeadDataTab<LeadSocial>
+            columns={socialColumns}
+            data={socials.data}
+            totalCount={socials.totalCount}
+            loading={socials.loading}
+            keyExtractor={(lead) => lead.id}
+            searchTerm={socials.searchTerm}
+            onSearchChange={socials.setSearchTerm}
+            searchPlaceholder="Lọc theo Tên, Nền tảng, URL, Website..."
+            emptyState="Chưa có mạng xã hội nào được tìm thấy."
+            currentPage={socials.currentPage}
+            totalPages={socials.totalPages}
+            pageSize={socials.pageSize}
+            onPageChange={socials.goToPage}
+            onPageSizeChange={(size) => socials.setPageSize(size)}
+            onExportCSV={handleExportSocialsCSV}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -1,62 +1,86 @@
 const dbRepo = require('../repositories/db.repository');
 
-const VALID_PHONE_REGEX = /^0\d{9}$/;
+// Persists a single crawled URL's results: the crawled_urls row plus any
+// emails/phones/socials found on it, each deduped independently.
+// `dedupeSets` tracks existing + session-added keys across the whole crawl run.
+async function recordCrawlResult(crawled, keyword, crawlLogId, dedupeSets) {
+  const urlId = '_' + Math.random().toString(36).substr(2, 9);
+  const now = new Date().toISOString();
 
-// Normalize phone numbers stored on existing leads (max 2 valid numbers each)
-async function cleanPhones() {
-  const leads = await dbRepo.getLeads();
-  let fixedCount = 0;
+  await dbRepo.insertCrawledUrl({
+    id: urlId,
+    url: crawled.url,
+    title: crawled.title,
+    status: crawled.status,
+    message: crawled.message,
+    keyword,
+    crawlLogId,
+    createdAt: now
+  });
 
-  for (const lead of leads) {
-    const phones = (lead.phone || '')
-      .split(',')
-      .map(p => p.trim().replace(/[\s.-]/g, ''))
-      .filter(p => VALID_PHONE_REGEX.test(p));
-
-    const cleanPhone = [...new Set(phones)].slice(0, 2).join(', ');
-    if (cleanPhone !== lead.phone) {
-      await dbRepo.updateLeadPhone(lead.id, cleanPhone);
-      fixedCount++;
-    }
-  }
-
-  return { fixedCount, total: leads.length };
-}
-
-// Persist new leads (deduped by email) found from a crawl result. Returns how many were added.
-async function addLeadsFromCrawl(crawled, keyword, crawlLogId, existingEmails = new Set(), addedInSession = new Set()) {
-  let newLeadsCount = 0;
+  let newEmails = 0;
+  let newPhones = 0;
+  let newSocials = 0;
 
   for (const email of crawled.emails) {
     const emailLower = email.toLowerCase().trim();
-    const isExisting = existingEmails.has(emailLower);
-    const isAlreadyAdded = addedInSession.has(emailLower);
-    const uniquePhones = [...new Set(crawled.phones)].slice(0, 2);
-
-    let existing = null;
-    if (isExisting) {
-      existing = await dbRepo.findLeadByEmail(emailLower);
-    }
-
-    await dbRepo.insertLead({
-      id: existing ? existing.id : '_' + Math.random().toString(36).substr(2, 9),
-      name: crawled.title || (existing ? existing.name : ''),
+    await dbRepo.upsertLeadEmail({
+      id: '_' + Math.random().toString(36).substr(2, 9),
       email: emailLower,
-      phone: uniquePhones.length > 0 ? uniquePhones.join(', ') : (existing ? existing.phone : ''),
-      website: crawled.url || (existing ? existing.website : ''),
-      keyword: existing ? existing.keyword : keyword,
-      createdAt: existing ? existing.createdAt : new Date().toISOString(),
-      emailStatus: existing ? existing.emailStatus : 'Chưa gửi',
-      crawlLogId: existing ? existing.crawlLogId : crawlLogId
+      name: crawled.title,
+      website: crawled.url,
+      keyword,
+      createdAt: now,
+      emailStatus: 'Chưa gửi',
+      crawlLogId,
+      urlId
     });
 
-    if (!isExisting && !isAlreadyAdded) {
-      addedInSession.add(emailLower);
-      newLeadsCount++;
+    if (!dedupeSets.existingEmails.has(emailLower) && !dedupeSets.addedEmails.has(emailLower)) {
+      dedupeSets.addedEmails.add(emailLower);
+      newEmails++;
     }
   }
 
-  return newLeadsCount;
+  for (const phone of [...new Set(crawled.phones)]) {
+    await dbRepo.upsertLeadPhone({
+      id: '_' + Math.random().toString(36).substr(2, 9),
+      phone,
+      name: crawled.title,
+      website: crawled.url,
+      keyword,
+      createdAt: now,
+      crawlLogId,
+      urlId
+    });
+
+    if (!dedupeSets.existingPhones.has(phone) && !dedupeSets.addedPhones.has(phone)) {
+      dedupeSets.addedPhones.add(phone);
+      newPhones++;
+    }
+  }
+
+  for (const social of crawled.socials) {
+    const key = `${social.platform}|${social.url}`;
+    await dbRepo.upsertLeadSocial({
+      id: '_' + Math.random().toString(36).substr(2, 9),
+      platform: social.platform,
+      url: social.url,
+      name: crawled.title,
+      website: crawled.url,
+      keyword,
+      createdAt: now,
+      crawlLogId,
+      urlId
+    });
+
+    if (!dedupeSets.existingSocials.has(key) && !dedupeSets.addedSocials.has(key)) {
+      dedupeSets.addedSocials.add(key);
+      newSocials++;
+    }
+  }
+
+  return { newEmails, newPhones, newSocials };
 }
 
-module.exports = { cleanPhones, addLeadsFromCrawl };
+module.exports = { recordCrawlResult };

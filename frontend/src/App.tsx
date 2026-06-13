@@ -12,18 +12,18 @@ import StatsBar from './components/layout/StatsBar';
 import Footer from './components/layout/Footer';
 import BackgroundOrbs from './components/layout/BackgroundOrbs';
 import NotificationToast from './components/layout/NotificationToast';
-import { Lead, SmtpSettings } from './components/types';
+import { LeadEmail, SmtpSettings } from './components/types';
 import { useAuth } from './contexts/AuthContext';
 import { apiFetch } from './lib/api';
 
 export default function App() {
   const location = useLocation();
   const { user, loading: authLoading, logout } = useAuth();
-  const [stats, setStats] = useState({ total: 0, success: 0, failed: 0 });
+  const [stats, setStats] = useState({ totalUrls: 0, totalEmails: 0, totalPhones: 0, totalSocials: 0 });
   const [leadsVersion, setLeadsVersion] = useState(0);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showClearLeadsConfirm, setShowClearLeadsConfirm] = useState(false);
-  const [selectedLeads, setSelectedLeads] = useState<Lead[]>([]);
+  const [selectedLeads, setSelectedLeads] = useState<LeadEmail[]>([]);
   const [smtpSettings, setSmtpSettings] = useState<SmtpSettings>({ host: '', port: '', user: '', pass: '' });
 
   // Toast notifications state
@@ -82,15 +82,15 @@ export default function App() {
   const handleClearAllLeads = async () => {
     try {
       await apiFetch('/api/leads', { method: 'DELETE' });
-      showToast('Đã xóa toàn bộ leads thành công.');
+      showToast('Đã xóa toàn bộ dữ liệu leads, URL đã cào và lịch sử cào.');
       setSelectedLeads([]);
       triggerLeadsRefresh();
     } catch (err) {
-      showToast('Không thể xóa leads!', true);
+      showToast('Không thể xóa dữ liệu!', true);
     }
   };
 
-  const handleSelectionChange = (newSelectedIds: Set<string>, currentLeads: Lead[]) => {
+  const handleSelectionChange = (newSelectedIds: Set<string>, currentLeads: LeadEmail[]) => {
     setSelectedLeads(prev => {
       // Filter out deselected leads belonging to the current page
       const deselectedInCurrentPage = currentLeads.filter(l => !newSelectedIds.has(l.id)).map(l => l.id);
@@ -141,7 +141,7 @@ export default function App() {
           onLogoutClick={() => setShowLogoutConfirm(true)}
         />
 
-        <StatsBar stats={stats} selectedCount={selectedLeads.length} />
+        <StatsBar stats={stats} />
 
         {/* Main Content Area */}
         <main className="w-full max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex-1 flex flex-col">
@@ -156,7 +156,7 @@ export default function App() {
               element={
                 <LeadsTab
                   leadsVersion={leadsVersion}
-                  leadsCount={stats.total}
+                  leadsCount={stats.totalEmails}
                   selectedIds={selectedIds}
                   onSelectionChange={handleSelectionChange}
                   onClearAll={() => setShowClearLeadsConfirm(true)}
@@ -212,8 +212,8 @@ export default function App() {
       <ConfirmDialog
         open={showClearLeadsConfirm}
         onOpenChange={setShowClearLeadsConfirm}
-        title="Xóa toàn bộ Leads"
-        description="Bạn có chắc chắn muốn xóa toàn bộ Leads đã cào được khỏi cơ sở dữ liệu? Hành động này không thể hoàn tác."
+        title="Xóa toàn bộ dữ liệu"
+        description="Bạn có chắc chắn muốn xóa toàn bộ Leads (Email/SĐT/Mạng xã hội), URL đã cào và lịch sử cào khỏi cơ sở dữ liệu? Hành động này không thể hoàn tác."
         confirmLabel="Xóa tất cả"
         variant="destructive"
         onConfirm={handleClearAllLeads}

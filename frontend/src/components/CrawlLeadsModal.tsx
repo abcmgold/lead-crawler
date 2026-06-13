@@ -1,43 +1,42 @@
 import React from 'react';
-import { Loader2, ExternalLink } from 'lucide-react';
-import { HistoryItem, Lead } from './types';
+import { ExternalLink } from 'lucide-react';
+import { HistoryItem, LeadEmail, LeadPhone, LeadSocial } from './types';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { DataTable, Column } from '@/components/ui/data-table';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useLeadListData } from '@/hooks/useLeadListData';
 
 interface CrawlLeadsModalProps {
   open: boolean;
   crawlLog: HistoryItem | null;
-  leads: Lead[];
-  loading: boolean;
-  totalCount: number;
-  currentPage: number;
-  totalPages: number;
-  pageSize: number;
-  onPageChange: (page: number) => void;
   onClose: () => void;
 }
 
-export default function CrawlLeadsModal({
-  open,
-  crawlLog,
-  leads,
-  loading,
-  totalCount,
-  currentPage,
-  totalPages,
-  pageSize,
-  onPageChange,
-  onClose,
-}: CrawlLeadsModalProps) {
-  const columns = React.useMemo<Column<Lead>[]>(() => [
+const SOCIAL_PLATFORM_LABELS: Record<string, string> = {
+  facebook: 'Facebook',
+  tiktok: 'TikTok',
+  linkedin: 'LinkedIn',
+  youtube: 'YouTube',
+  instagram: 'Instagram',
+};
+
+export default function CrawlLeadsModal({ open, crawlLog, onClose }: CrawlLeadsModalProps) {
+  const crawlLogId = crawlLog?.id || '';
+  const enabled = open && !!crawlLog;
+
+  const emails = useLeadListData<LeadEmail>({ endpoint: '/api/leads/emails', crawlLogId, enabled });
+  const phones = useLeadListData<LeadPhone>({ endpoint: '/api/leads/phones', crawlLogId, enabled });
+  const socials = useLeadListData<LeadSocial>({ endpoint: '/api/leads/socials', crawlLogId, enabled });
+
+  const emailColumns = React.useMemo<Column<LeadEmail>[]>(() => [
     {
       id: 'name',
       header: "Doanh Nghiệp / Site",
       accessor: (lead) => lead.name,
       className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
       cellClassName: "px-4 py-3 font-semibold text-slate-200 truncate font-sans",
-      width: 220,
+      width: 240,
     },
     {
       id: 'email',
@@ -52,15 +51,7 @@ export default function CrawlLeadsModal({
       ),
       className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
       cellClassName: "px-4 py-3",
-      width: 240,
-    },
-    {
-      id: 'phone',
-      header: "Số điện thoại",
-      accessor: (lead) => lead.phone || '—',
-      className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
-      cellClassName: "px-4 py-3 text-slate-400 font-mono text-xs",
-      width: 140,
+      width: 260,
     },
     {
       id: 'website',
@@ -83,6 +74,86 @@ export default function CrawlLeadsModal({
     }
   ], []);
 
+  const phoneColumns = React.useMemo<Column<LeadPhone>[]>(() => [
+    {
+      id: 'name',
+      header: "Doanh Nghiệp / Site",
+      accessor: (lead) => lead.name,
+      className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
+      cellClassName: "px-4 py-3 font-semibold text-slate-200 truncate font-sans",
+      width: 240,
+    },
+    {
+      id: 'phone',
+      header: "Số điện thoại",
+      accessor: (lead) => lead.phone,
+      className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
+      cellClassName: "px-4 py-3 text-slate-200 font-mono text-xs",
+      width: 160,
+    },
+    {
+      id: 'website',
+      header: "Website",
+      accessor: (lead) => (
+        <a
+          href={lead.website}
+          target="_blank"
+          rel="noreferrer"
+          title={lead.website}
+          className="text-slate-400 hover:text-primary hover:underline inline-flex items-center gap-1 max-w-full transition-colors text-xs font-sans"
+        >
+          <span className="truncate min-w-0">{lead.website}</span>
+          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+        </a>
+      ),
+      className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
+      cellClassName: "px-4 py-3",
+      width: 220,
+    }
+  ], []);
+
+  const socialColumns = React.useMemo<Column<LeadSocial>[]>(() => [
+    {
+      id: 'name',
+      header: "Doanh Nghiệp / Site",
+      accessor: (lead) => lead.name,
+      className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
+      cellClassName: "px-4 py-3 font-semibold text-slate-200 truncate font-sans",
+      width: 220,
+    },
+    {
+      id: 'platform',
+      header: "Nền tảng",
+      accessor: (lead) => (
+        <span className="text-xs px-2.5 py-1 rounded-full font-semibold border bg-primary/10 text-primary border-primary/20 font-sans">
+          {SOCIAL_PLATFORM_LABELS[lead.platform] || lead.platform}
+        </span>
+      ),
+      className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
+      cellClassName: "px-4 py-3",
+      width: 140,
+    },
+    {
+      id: 'url',
+      header: "Đường dẫn",
+      accessor: (lead) => (
+        <a
+          href={lead.url}
+          target="_blank"
+          rel="noreferrer"
+          title={lead.url}
+          className="text-slate-400 hover:text-primary hover:underline inline-flex items-center gap-1 max-w-full transition-colors text-xs font-sans"
+        >
+          <span className="truncate min-w-0">{lead.url}</span>
+          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+        </a>
+      ),
+      className: "px-4 py-3 font-sans font-semibold text-xs uppercase text-slate-400",
+      cellClassName: "px-4 py-3",
+      width: 280,
+    }
+  ], []);
+
   if (!crawlLog) return null;
 
   return (
@@ -91,7 +162,7 @@ export default function CrawlLeadsModal({
       onClose={onClose}
       className="max-w-4xl max-h-[85vh] overflow-hidden"
       title={`Kết quả cào cho: "${crawlLog.keyword}"`}
-      description={`Thời gian: ${new Date(crawlLog.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} | Tìm thấy ${totalCount} leads`}
+      description={`Thời gian: ${new Date(crawlLog.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`}
       footer={
         <Button
           variant="outline"
@@ -102,23 +173,73 @@ export default function CrawlLeadsModal({
         </Button>
       }
     >
-      <DataTable
-        columns={columns}
-        data={leads}
-        keyExtractor={(lead) => lead.id}
-        emptyState="Không tìm thấy lead nào thuộc phiên cào này hoặc đã bị xóa."
-        className="w-full text-sm text-left text-slate-300"
-        scrollableBody
-        loading={loading}
-        pagination={{
-          currentPage,
-          totalPages,
-          totalCount,
-          pageSize,
-          onPageChange,
-          itemLabel: "leads",
-        }}
-      />
+      <Tabs defaultValue="emails">
+        <TabsList>
+          <TabsTrigger value="emails">Email ({emails.totalCount})</TabsTrigger>
+          <TabsTrigger value="phones">Số điện thoại ({phones.totalCount})</TabsTrigger>
+          <TabsTrigger value="socials">Mạng xã hội ({socials.totalCount})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="emails" className="mt-4">
+          <DataTable
+            columns={emailColumns}
+            data={emails.data}
+            keyExtractor={(lead) => lead.id}
+            emptyState="Không tìm thấy email nào thuộc phiên cào này."
+            className="w-full text-sm text-left text-slate-300"
+            scrollableBody
+            loading={emails.loading}
+            pagination={{
+              currentPage: emails.currentPage,
+              totalPages: emails.totalPages,
+              totalCount: emails.totalCount,
+              pageSize: emails.pageSize,
+              onPageChange: emails.goToPage,
+              itemLabel: "email",
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="phones" className="mt-4">
+          <DataTable
+            columns={phoneColumns}
+            data={phones.data}
+            keyExtractor={(lead) => lead.id}
+            emptyState="Không tìm thấy số điện thoại nào thuộc phiên cào này."
+            className="w-full text-sm text-left text-slate-300"
+            scrollableBody
+            loading={phones.loading}
+            pagination={{
+              currentPage: phones.currentPage,
+              totalPages: phones.totalPages,
+              totalCount: phones.totalCount,
+              pageSize: phones.pageSize,
+              onPageChange: phones.goToPage,
+              itemLabel: "số điện thoại",
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="socials" className="mt-4">
+          <DataTable
+            columns={socialColumns}
+            data={socials.data}
+            keyExtractor={(lead) => lead.id}
+            emptyState="Không tìm thấy mạng xã hội nào thuộc phiên cào này."
+            className="w-full text-sm text-left text-slate-300"
+            scrollableBody
+            loading={socials.loading}
+            pagination={{
+              currentPage: socials.currentPage,
+              totalPages: socials.totalPages,
+              totalCount: socials.totalCount,
+              pageSize: socials.pageSize,
+              onPageChange: socials.goToPage,
+              itemLabel: "mạng xã hội",
+            }}
+          />
+        </TabsContent>
+      </Tabs>
     </Modal>
   );
 }

@@ -1,16 +1,43 @@
 const pool = require('../db/pool');
 
-function rowToLead(row) {
+function rowToLeadEmail(row) {
   return {
     id: row.id,
-    name: row.name,
     email: row.email,
-    phone: row.phone,
+    name: row.name,
     website: row.website,
     keyword: row.keyword,
     createdAt: row.created_at.toISOString(),
     emailStatus: row.email_status,
-    crawlLogId: row.crawl_log_id
+    crawlLogId: row.crawl_log_id,
+    urlId: row.url_id
+  };
+}
+
+function rowToLeadPhone(row) {
+  return {
+    id: row.id,
+    phone: row.phone,
+    name: row.name,
+    website: row.website,
+    keyword: row.keyword,
+    createdAt: row.created_at.toISOString(),
+    crawlLogId: row.crawl_log_id,
+    urlId: row.url_id
+  };
+}
+
+function rowToLeadSocial(row) {
+  return {
+    id: row.id,
+    platform: row.platform,
+    url: row.url,
+    name: row.name,
+    website: row.website,
+    keyword: row.keyword,
+    createdAt: row.created_at.toISOString(),
+    crawlLogId: row.crawl_log_id,
+    urlId: row.url_id
   };
 }
 
@@ -20,53 +47,23 @@ function rowToLog(row) {
     keyword: row.keyword,
     timestamp: row.timestamp.toISOString(),
     urlsCount: row.urls_count,
-    newLeadsCount: row.new_leads_count
+    newEmailsCount: row.new_emails_count,
+    newPhonesCount: row.new_phones_count,
+    newSocialsCount: row.new_socials_count
   };
 }
 
-async function getLeads() {
-  const { rows } = await pool.query('SELECT * FROM leads ORDER BY created_at ASC');
-  return rows.map(rowToLead);
-}
-
-async function getLeadsFiltered({ search = '', crawlLogId = '' } = {}) {
-  const params = [];
-  let query = 'SELECT * FROM leads';
-  let conditions = [];
-
-  if (search) {
-    params.push(`%${search}%`);
-    const searchIdx = params.length;
-    conditions.push(`(name ILIKE $${searchIdx} OR email ILIKE $${searchIdx} OR phone ILIKE $${searchIdx} OR website ILIKE $${searchIdx})`);
-  }
-
-  if (crawlLogId) {
-    params.push(crawlLogId);
-    const logIdx = params.length;
-    conditions.push(`crawl_log_id = $${logIdx}`);
-  }
-
-  if (conditions.length > 0) {
-    query += ' WHERE ' + conditions.join(' AND ');
-  }
-
-  query += ' ORDER BY created_at DESC';
-
-  const { rows } = await pool.query(query, params);
-  return rows.map(rowToLead);
-}
-
-async function getLeadsPaginated({ page = 1, limit = 25, search = '', crawlLogId = '' }) {
+async function getLeadEmailsPaginated({ page = 1, limit = 25, search = '', crawlLogId = '' }) {
   const offset = (page - 1) * limit;
   const params = [];
-  let query = 'SELECT * FROM leads';
-  let countQuery = 'SELECT COUNT(*) FROM leads';
+  let query = 'SELECT * FROM lead_emails';
+  let countQuery = 'SELECT COUNT(*) FROM lead_emails';
   let conditions = [];
 
   if (search) {
     params.push(`%${search}%`);
     const searchIdx = params.length;
-    conditions.push(`(name ILIKE $${searchIdx} OR email ILIKE $${searchIdx} OR phone ILIKE $${searchIdx} OR website ILIKE $${searchIdx})`);
+    conditions.push(`(name ILIKE $${searchIdx} OR email ILIKE $${searchIdx} OR website ILIKE $${searchIdx})`);
   }
 
   if (crawlLogId) {
@@ -90,40 +87,288 @@ async function getLeadsPaginated({ page = 1, limit = 25, search = '', crawlLogId
   const countRes = await pool.query(countQuery, countParams);
 
   return {
-    leads: rows.map(rowToLead),
+    leads: rows.map(rowToLeadEmail),
     total: parseInt(countRes.rows[0].count, 10),
     page,
     limit
   };
 }
 
-async function findLeadByEmail(email) {
-  const { rows } = await pool.query('SELECT * FROM leads WHERE email = $1', [email]);
-  return rows[0] ? rowToLead(rows[0]) : null;
+async function getLeadEmailsFiltered({ search = '', crawlLogId = '' } = {}) {
+  const params = [];
+  let query = 'SELECT * FROM lead_emails';
+  let conditions = [];
+
+  if (search) {
+    params.push(`%${search}%`);
+    const searchIdx = params.length;
+    conditions.push(`(name ILIKE $${searchIdx} OR email ILIKE $${searchIdx} OR website ILIKE $${searchIdx})`);
+  }
+
+  if (crawlLogId) {
+    params.push(crawlLogId);
+    const logIdx = params.length;
+    conditions.push(`crawl_log_id = $${logIdx}`);
+  }
+
+  if (conditions.length > 0) {
+    query += ' WHERE ' + conditions.join(' AND ');
+  }
+
+  query += ' ORDER BY created_at DESC';
+
+  const { rows } = await pool.query(query, params);
+  return rows.map(rowToLeadEmail);
 }
 
-async function insertLead(lead) {
+async function getLeadPhonesPaginated({ page = 1, limit = 25, search = '', crawlLogId = '' }) {
+  const offset = (page - 1) * limit;
+  const params = [];
+  let query = 'SELECT * FROM lead_phones';
+  let countQuery = 'SELECT COUNT(*) FROM lead_phones';
+  let conditions = [];
+
+  if (search) {
+    params.push(`%${search}%`);
+    const searchIdx = params.length;
+    conditions.push(`(name ILIKE $${searchIdx} OR phone ILIKE $${searchIdx} OR website ILIKE $${searchIdx})`);
+  }
+
+  if (crawlLogId) {
+    params.push(crawlLogId);
+    const logIdx = params.length;
+    conditions.push(`crawl_log_id = $${logIdx}`);
+  }
+
+  if (conditions.length > 0) {
+    const whereClause = ' WHERE ' + conditions.join(' AND ');
+    query += whereClause;
+    countQuery += whereClause;
+  }
+
+  query += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+
+  const countParams = [...params];
+  params.push(limit, offset);
+
+  const { rows } = await pool.query(query, params);
+  const countRes = await pool.query(countQuery, countParams);
+
+  return {
+    leads: rows.map(rowToLeadPhone),
+    total: parseInt(countRes.rows[0].count, 10),
+    page,
+    limit
+  };
+}
+
+async function getLeadPhonesFiltered({ search = '', crawlLogId = '' } = {}) {
+  const params = [];
+  let query = 'SELECT * FROM lead_phones';
+  let conditions = [];
+
+  if (search) {
+    params.push(`%${search}%`);
+    const searchIdx = params.length;
+    conditions.push(`(name ILIKE $${searchIdx} OR phone ILIKE $${searchIdx} OR website ILIKE $${searchIdx})`);
+  }
+
+  if (crawlLogId) {
+    params.push(crawlLogId);
+    const logIdx = params.length;
+    conditions.push(`crawl_log_id = $${logIdx}`);
+  }
+
+  if (conditions.length > 0) {
+    query += ' WHERE ' + conditions.join(' AND ');
+  }
+
+  query += ' ORDER BY created_at DESC';
+
+  const { rows } = await pool.query(query, params);
+  return rows.map(rowToLeadPhone);
+}
+
+async function getLeadSocialsPaginated({ page = 1, limit = 25, search = '', crawlLogId = '' }) {
+  const offset = (page - 1) * limit;
+  const params = [];
+  let query = 'SELECT * FROM lead_socials';
+  let countQuery = 'SELECT COUNT(*) FROM lead_socials';
+  let conditions = [];
+
+  if (search) {
+    params.push(`%${search}%`);
+    const searchIdx = params.length;
+    conditions.push(`(name ILIKE $${searchIdx} OR platform ILIKE $${searchIdx} OR url ILIKE $${searchIdx} OR website ILIKE $${searchIdx})`);
+  }
+
+  if (crawlLogId) {
+    params.push(crawlLogId);
+    const logIdx = params.length;
+    conditions.push(`crawl_log_id = $${logIdx}`);
+  }
+
+  if (conditions.length > 0) {
+    const whereClause = ' WHERE ' + conditions.join(' AND ');
+    query += whereClause;
+    countQuery += whereClause;
+  }
+
+  query += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+
+  const countParams = [...params];
+  params.push(limit, offset);
+
+  const { rows } = await pool.query(query, params);
+  const countRes = await pool.query(countQuery, countParams);
+
+  return {
+    leads: rows.map(rowToLeadSocial),
+    total: parseInt(countRes.rows[0].count, 10),
+    page,
+    limit
+  };
+}
+
+async function getLeadSocialsFiltered({ search = '', crawlLogId = '' } = {}) {
+  const params = [];
+  let query = 'SELECT * FROM lead_socials';
+  let conditions = [];
+
+  if (search) {
+    params.push(`%${search}%`);
+    const searchIdx = params.length;
+    conditions.push(`(name ILIKE $${searchIdx} OR platform ILIKE $${searchIdx} OR url ILIKE $${searchIdx} OR website ILIKE $${searchIdx})`);
+  }
+
+  if (crawlLogId) {
+    params.push(crawlLogId);
+    const logIdx = params.length;
+    conditions.push(`crawl_log_id = $${logIdx}`);
+  }
+
+  if (conditions.length > 0) {
+    query += ' WHERE ' + conditions.join(' AND ');
+  }
+
+  query += ' ORDER BY created_at DESC';
+
+  const { rows } = await pool.query(query, params);
+  return rows.map(rowToLeadSocial);
+}
+
+async function getAllLeadEmails() {
+  const { rows } = await pool.query('SELECT * FROM lead_emails ORDER BY created_at ASC');
+  return rows.map(rowToLeadEmail);
+}
+
+async function getAllLeadEmailAddresses() {
+  const { rows } = await pool.query('SELECT email FROM lead_emails');
+  return new Set(rows.map(r => r.email.toLowerCase()));
+}
+
+async function getAllLeadPhoneNumbers() {
+  const { rows } = await pool.query('SELECT phone FROM lead_phones');
+  return new Set(rows.map(r => r.phone));
+}
+
+async function getAllLeadSocialKeys() {
+  const { rows } = await pool.query('SELECT platform, url FROM lead_socials');
+  return new Set(rows.map(r => `${r.platform}|${r.url}`));
+}
+
+async function upsertLeadEmail(lead) {
   await pool.query(
-    `INSERT INTO leads (id, name, email, phone, website, keyword, created_at, email_status, crawl_log_id)
+    `INSERT INTO lead_emails (id, email, name, website, keyword, created_at, email_status, crawl_log_id, url_id)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      ON CONFLICT (email) DO UPDATE SET
-       name = COALESCE(NULLIF(EXCLUDED.name, ''), leads.name),
-       phone = COALESCE(NULLIF(EXCLUDED.phone, ''), leads.phone),
-       website = COALESCE(NULLIF(EXCLUDED.website, ''), leads.website)`,
-    [lead.id, lead.name, lead.email, lead.phone, lead.website, lead.keyword, lead.createdAt, lead.emailStatus, lead.crawlLogId || null]
+       name = COALESCE(NULLIF(EXCLUDED.name, ''), lead_emails.name),
+       website = COALESCE(NULLIF(EXCLUDED.website, ''), lead_emails.website)`,
+    [lead.id, lead.email, lead.name, lead.website, lead.keyword, lead.createdAt, lead.emailStatus, lead.crawlLogId || null, lead.urlId || null]
   );
 }
 
-async function updateLeadPhone(id, phone) {
-  await pool.query('UPDATE leads SET phone = $1 WHERE id = $2', [phone, id]);
+async function upsertLeadPhone(lead) {
+  await pool.query(
+    `INSERT INTO lead_phones (id, phone, name, website, keyword, created_at, crawl_log_id, url_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     ON CONFLICT (phone) DO UPDATE SET
+       name = COALESCE(NULLIF(EXCLUDED.name, ''), lead_phones.name),
+       website = COALESCE(NULLIF(EXCLUDED.website, ''), lead_phones.website)`,
+    [lead.id, lead.phone, lead.name, lead.website, lead.keyword, lead.createdAt, lead.crawlLogId || null, lead.urlId || null]
+  );
 }
 
-async function updateLeadStatus(id, emailStatus) {
-  await pool.query('UPDATE leads SET email_status = $1 WHERE id = $2', [emailStatus, id]);
+async function upsertLeadSocial(social) {
+  await pool.query(
+    `INSERT INTO lead_socials (id, platform, url, name, website, keyword, created_at, crawl_log_id, url_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     ON CONFLICT (platform, url) DO UPDATE SET
+       name = COALESCE(NULLIF(EXCLUDED.name, ''), lead_socials.name),
+       website = COALESCE(NULLIF(EXCLUDED.website, ''), lead_socials.website)`,
+    [social.id, social.platform, social.url, social.name, social.website, social.keyword, social.createdAt, social.crawlLogId || null, social.urlId || null]
+  );
 }
 
-async function clearLeads() {
-  await pool.query('DELETE FROM leads');
+async function updateLeadEmailStatus(id, emailStatus) {
+  await pool.query('UPDATE lead_emails SET email_status = $1 WHERE id = $2', [emailStatus, id]);
+}
+
+async function clearLeadEmails() {
+  await pool.query('DELETE FROM lead_emails');
+}
+
+async function clearLeadPhones() {
+  await pool.query('DELETE FROM lead_phones');
+}
+
+async function clearLeadSocials() {
+  await pool.query('DELETE FROM lead_socials');
+}
+
+async function clearCrawledUrls() {
+  await pool.query('DELETE FROM crawled_urls');
+}
+
+// Resets all crawl-derived data in one transaction: leads, crawled URLs, and crawl history
+async function clearAllLeadData() {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM lead_emails');
+    await client.query('DELETE FROM lead_phones');
+    await client.query('DELETE FROM lead_socials');
+    await client.query('DELETE FROM crawled_urls');
+    await client.query('DELETE FROM crawl_logs');
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function getLeadsOverallSummary() {
+  const urlsRes = await pool.query('SELECT COUNT(*) FROM crawled_urls');
+  const emailsRes = await pool.query('SELECT COUNT(*) FROM lead_emails');
+  const phonesRes = await pool.query('SELECT COUNT(*) FROM lead_phones');
+  const socialsRes = await pool.query('SELECT COUNT(*) FROM lead_socials');
+
+  return {
+    totalUrls: parseInt(urlsRes.rows[0].count, 10),
+    totalEmails: parseInt(emailsRes.rows[0].count, 10),
+    totalPhones: parseInt(phonesRes.rows[0].count, 10),
+    totalSocials: parseInt(socialsRes.rows[0].count, 10)
+  };
+}
+
+async function insertCrawledUrl(crawledUrl) {
+  await pool.query(
+    `INSERT INTO crawled_urls (id, url, title, status, message, keyword, crawl_log_id, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [crawledUrl.id, crawledUrl.url, crawledUrl.title, crawledUrl.status, crawledUrl.message, crawledUrl.keyword, crawledUrl.crawlLogId || null, crawledUrl.createdAt]
+  );
 }
 
 async function getLogs() {
@@ -148,9 +393,9 @@ async function getLogsPaginated({ page = 1, limit = 10 } = {}) {
 
 async function addLog(log) {
   await pool.query(
-    `INSERT INTO crawl_logs (id, keyword, "timestamp", urls_count, new_leads_count)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [log.id, log.keyword, log.timestamp, log.urlsCount, log.newLeadsCount]
+    `INSERT INTO crawl_logs (id, keyword, "timestamp", urls_count, new_emails_count, new_phones_count, new_socials_count)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [log.id, log.keyword, log.timestamp, log.urlsCount, log.newEmailsCount, log.newPhonesCount, log.newSocialsCount]
   );
 }
 
@@ -245,28 +490,28 @@ async function deleteTemplate(id) {
   await pool.query('DELETE FROM email_templates WHERE id = $1', [id]);
 }
 
-async function getLeadsSummary() {
-  const totalRes = await pool.query('SELECT COUNT(*) FROM leads');
-  const successRes = await pool.query("SELECT COUNT(*) FROM leads WHERE email_status = 'Gửi thành công'");
-  const failedRes = await pool.query("SELECT COUNT(*) FROM leads WHERE email_status LIKE 'Thất bại%'");
-
-  return {
-    total: parseInt(totalRes.rows[0].count, 10),
-    success: parseInt(successRes.rows[0].count, 10),
-    failed: parseInt(failedRes.rows[0].count, 10)
-  };
-}
-
 module.exports = {
-  getLeads,
-  getLeadsFiltered,
-  getLeadsPaginated,
-  getLeadsSummary,
-  findLeadByEmail,
-  insertLead,
-  updateLeadPhone,
-  updateLeadStatus,
-  clearLeads,
+  getLeadEmailsPaginated,
+  getLeadEmailsFiltered,
+  getLeadPhonesPaginated,
+  getLeadPhonesFiltered,
+  getLeadSocialsPaginated,
+  getLeadSocialsFiltered,
+  getAllLeadEmails,
+  getAllLeadEmailAddresses,
+  getAllLeadPhoneNumbers,
+  getAllLeadSocialKeys,
+  upsertLeadEmail,
+  upsertLeadPhone,
+  upsertLeadSocial,
+  updateLeadEmailStatus,
+  clearLeadEmails,
+  clearLeadPhones,
+  clearLeadSocials,
+  clearCrawledUrls,
+  clearAllLeadData,
+  getLeadsOverallSummary,
+  insertCrawledUrl,
   getLogs,
   getLogsPaginated,
   addLog,
