@@ -377,9 +377,8 @@ function extractContacts(html, info) {
   }
 
   // 3. Extract from visible text by removing code tags (script, style, etc.)
-  const textSource = $.clone();
-  textSource('script, style, noscript, iframe, svg, head').remove();
-  const cleanText = textSource.text();
+  $('script, style, noscript, iframe, svg, head').remove();
+  const cleanText = $('body').text() || $.text();
 
   // Email regex
   const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,8}/g;

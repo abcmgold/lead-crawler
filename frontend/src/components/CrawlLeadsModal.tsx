@@ -156,12 +156,20 @@ export default function CrawlLeadsModal({ open, crawlLog, onClose }: CrawlLeadsM
 
   if (!crawlLog) return null;
 
+  const displayKeyword = crawlLog.keyword.length > 50
+    ? crawlLog.keyword.slice(0, 50) + '...'
+    : crawlLog.keyword;
+  const firstLead = emails.data[0] || phones.data[0] || socials.data[0];
+  const siteTitle = firstLead?.name;
+  const isUrl = crawlLog.keyword.startsWith('http://') || crawlLog.keyword.startsWith('https://') || /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(crawlLog.keyword);
+  const displayTitle = (isUrl && siteTitle) ? siteTitle : displayKeyword;
+
   return (
     <Modal
       open={open}
       onClose={onClose}
       className="max-w-4xl max-h-[85vh] overflow-hidden"
-      title={`Kết quả cào cho: "${crawlLog.keyword}"`}
+      title={<span title={crawlLog.keyword}>Kết quả cào cho: "{displayTitle}"</span>}
       description={`Thời gian: ${new Date(crawlLog.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`}
       footer={
         <Button
