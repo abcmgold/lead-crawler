@@ -318,12 +318,30 @@ async function clearLeadEmails() {
   await pool.query('DELETE FROM lead_emails');
 }
 
+async function deleteLeadEmails(ids) {
+  if (!Array.isArray(ids)) ids = [ids];
+  if (ids.length === 0) return;
+  await pool.query('DELETE FROM lead_emails WHERE id = ANY($1)', [ids]);
+}
+
 async function clearLeadPhones() {
   await pool.query('DELETE FROM lead_phones');
 }
 
+async function deleteLeadPhones(ids) {
+  if (!Array.isArray(ids)) ids = [ids];
+  if (ids.length === 0) return;
+  await pool.query('DELETE FROM lead_phones WHERE id = ANY($1)', [ids]);
+}
+
 async function clearLeadSocials() {
   await pool.query('DELETE FROM lead_socials');
+}
+
+async function deleteLeadSocials(ids) {
+  if (!Array.isArray(ids)) ids = [ids];
+  if (ids.length === 0) return;
+  await pool.query('DELETE FROM lead_socials WHERE id = ANY($1)', [ids]);
 }
 
 async function clearCrawledUrls() {
@@ -506,8 +524,11 @@ module.exports = {
   upsertLeadSocial,
   updateLeadEmailStatus,
   clearLeadEmails,
+  deleteLeadEmails,
   clearLeadPhones,
+  deleteLeadPhones,
   clearLeadSocials,
+  deleteLeadSocials,
   clearCrawledUrls,
   clearAllLeadData,
   getLeadsOverallSummary,

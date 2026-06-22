@@ -21,6 +21,11 @@ async function getLeadPhones(req, res) {
 }
 
 async function clearLeadPhones(req, res) {
+  const { ids } = req.body;
+  if (ids) {
+    await dbRepo.deleteLeadPhones(ids);
+    return res.json({ message: 'Đã xóa các leads số điện thoại được chọn' });
+  }
   await dbRepo.clearLeadPhones();
   res.json({ message: 'Đã xóa toàn bộ leads số điện thoại' });
 }

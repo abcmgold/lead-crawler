@@ -21,6 +21,11 @@ async function getLeadSocials(req, res) {
 }
 
 async function clearLeadSocials(req, res) {
+  const { ids } = req.body;
+  if (ids) {
+    await dbRepo.deleteLeadSocials(ids);
+    return res.json({ message: 'Đã xóa các leads mạng xã hội được chọn' });
+  }
   await dbRepo.clearLeadSocials();
   res.json({ message: 'Đã xóa toàn bộ leads mạng xã hội' });
 }

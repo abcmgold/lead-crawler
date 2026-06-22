@@ -161,6 +161,7 @@ export default function App() {
                   onSelectionChange={handleSelectionChange}
                   onClearAll={() => setShowClearLeadsConfirm(true)}
                   showToast={showToast}
+                  onRefresh={triggerLeadsRefresh}
                 />
               }
             />

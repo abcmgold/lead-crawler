@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Trash2, ExternalLink } from 'lucide-react';
+import { Trash2, ExternalLink, Download } from 'lucide-react';
 import { LeadEmail, LeadPhone, LeadSocial, HistoryItem } from './types';
 import { apiFetch } from '@/lib/api';
 import { Column } from '@/components/ui/data-table';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useLeadListData } from '@/hooks/useLeadListData';
 import { LeadDataTab } from './LeadDataTab';
+import ConfirmDialog from './ConfirmDialog';
 
 interface LeadsTabProps {
   leadsVersion: number;
@@ -16,6 +17,7 @@ interface LeadsTabProps {
   onSelectionChange: (ids: Set<string>, currentLeads: LeadEmail[]) => void;
   onClearAll: () => void;
   showToast: (message: string, isError?: boolean) => void;
+  onRefresh?: () => void;
 }
 
 const SOCIAL_PLATFORM_LABELS: Record<string, string> = {
@@ -41,9 +43,26 @@ function downloadCSV(filename: string, header: string, rows: string[][]) {
   document.body.removeChild(link);
 }
 
-export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSelectionChange, onClearAll, showToast }: LeadsTabProps) {
+export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSelectionChange, onClearAll, showToast, onRefresh }: LeadsTabProps) {
   const [crawlLogs, setCrawlLogs] = useState<HistoryItem[]>([]);
   const [selectedLogId, setSelectedLogId] = useState<string>('');
+  
+  // Selection states for phone and social tabs
+  const [selectedPhoneIds, setSelectedPhoneIds] = useState<Set<string>>(new Set());
+  const [selectedSocialIds, setSelectedSocialIds] = useState<Set<string>>(new Set());
+
+  // Confirm dialog state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    show: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({
+    show: false,
+    title: '',
+    description: '',
+    onConfirm: () => {},
+  });
 
   useEffect(() => {
     loadCrawlLogs();
@@ -65,6 +84,7 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
   const phones = useLeadListData<LeadPhone>({ endpoint: '/api/leads/phones', leadsVersion, crawlLogId: selectedLogId });
   const socials = useLeadListData<LeadSocial>({ endpoint: '/api/leads/socials', leadsVersion, crawlLogId: selectedLogId });
 
+  // Email selection helpers
   const isAllFilteredSelected = emails.data.length > 0 && emails.data.every(l => selectedIds.has(l.id));
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,6 +105,171 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
       nextSelected.delete(id);
     }
     onSelectionChange(nextSelected, emails.data);
+  };
+
+  // Phone selection helpers
+  const isAllPhonesSelected = phones.data.length > 0 && phones.data.every(l => selectedPhoneIds.has(l.id));
+
+  const handleSelectAllPhones = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nextSelected = new Set(selectedPhoneIds);
+    if (e.target.checked) {
+      phones.data.forEach(l => nextSelected.add(l.id));
+    } else {
+      phones.data.forEach(l => nextSelected.delete(l.id));
+    }
+    setSelectedPhoneIds(nextSelected);
+  };
+
+  const handleSelectOnePhone = (id: string, checked: boolean) => {
+    const nextSelected = new Set(selectedPhoneIds);
+    if (checked) {
+      nextSelected.add(id);
+    } else {
+      nextSelected.delete(id);
+    }
+    setSelectedPhoneIds(nextSelected);
+  };
+
+  // Social selection helpers
+  const isAllSocialsSelected = socials.data.length > 0 && socials.data.every(l => selectedSocialIds.has(l.id));
+
+  const handleSelectAllSocials = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nextSelected = new Set(selectedSocialIds);
+    if (e.target.checked) {
+      socials.data.forEach(l => nextSelected.add(l.id));
+    } else {
+      socials.data.forEach(l => nextSelected.delete(l.id));
+    }
+    setSelectedSocialIds(nextSelected);
+  };
+
+  const handleSelectOneSocial = (id: string, checked: boolean) => {
+    const nextSelected = new Set(selectedSocialIds);
+    if (checked) {
+      nextSelected.add(id);
+    } else {
+      nextSelected.delete(id);
+    }
+    setSelectedSocialIds(nextSelected);
+  };
+
+  // API deletion helper
+  const deleteLeads = async (endpoint: string, ids: string[]) => {
+    try {
+      const res = await apiFetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ids })
+      });
+      if (res.ok) {
+        showToast('Xóa dữ liệu thành công!');
+        onRefresh?.();
+      } else {
+        showToast('Có lỗi xảy ra khi xóa dữ liệu!', true);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Có lỗi xảy ra khi xóa dữ liệu!', true);
+    }
+  };
+
+  const handleDeleteEmails = async (ids: string[]) => {
+    await deleteLeads('/api/leads/emails', ids);
+    const nextSelected = new Set(selectedIds);
+    ids.forEach(id => nextSelected.delete(id));
+    onSelectionChange(nextSelected, []);
+  };
+
+  const handleDeletePhones = async (ids: string[]) => {
+    await deleteLeads('/api/leads/phones', ids);
+    const nextSelected = new Set(selectedPhoneIds);
+    ids.forEach(id => nextSelected.delete(id));
+    setSelectedPhoneIds(nextSelected);
+  };
+
+  const handleDeleteSocials = async (ids: string[]) => {
+    await deleteLeads('/api/leads/socials', ids);
+    const nextSelected = new Set(selectedSocialIds);
+    ids.forEach(id => nextSelected.delete(id));
+    setSelectedSocialIds(nextSelected);
+  };
+
+  // Confirm functions
+  const confirmDeleteEmail = (id: string) => {
+    setDeleteConfirm({
+      show: true,
+      title: 'Xóa Lead Email',
+      description: 'Bạn có chắc chắn muốn xóa lead email này không? Hành động này không thể hoàn tác.',
+      onConfirm: () => {
+        handleDeleteEmails([id]);
+        setDeleteConfirm(prev => ({ ...prev, show: false }));
+      }
+    });
+  };
+
+  const confirmDeleteSelectedEmails = () => {
+    const ids = Array.from(selectedIds);
+    setDeleteConfirm({
+      show: true,
+      title: 'Xóa nhiều Lead Email',
+      description: `Bạn có chắc chắn muốn xóa ${ids.length} lead email đã chọn không? Hành động này không thể hoàn tác.`,
+      onConfirm: () => {
+        handleDeleteEmails(ids);
+        setDeleteConfirm(prev => ({ ...prev, show: false }));
+      }
+    });
+  };
+
+  const confirmDeletePhone = (id: string) => {
+    setDeleteConfirm({
+      show: true,
+      title: 'Xóa Số Điện Thoại',
+      description: 'Bạn có chắc chắn muốn xóa số điện thoại này không? Hành động này không thể hoàn tác.',
+      onConfirm: () => {
+        handleDeletePhones([id]);
+        setDeleteConfirm(prev => ({ ...prev, show: false }));
+      }
+    });
+  };
+
+  const confirmDeleteSelectedPhones = () => {
+    const ids = Array.from(selectedPhoneIds);
+    setDeleteConfirm({
+      show: true,
+      title: 'Xóa nhiều Số Điện Thoại',
+      description: `Bạn có chắc chắn muốn xóa ${ids.length} số điện thoại đã chọn không? Hành động này không thể hoàn tác.`,
+      onConfirm: () => {
+        handleDeletePhones(ids);
+        setDeleteConfirm(prev => ({ ...prev, show: false }));
+      }
+    });
+  };
+
+  const confirmDeleteSocial = (id: string) => {
+    setDeleteConfirm({
+      show: true,
+      title: 'Xóa Mạng Xã Hội',
+      description: 'Bạn có chắc chắn muốn xóa mạng xã hội này không? Hành động này không thể hoàn tác.',
+      onConfirm: () => {
+        handleDeleteSocials([id]);
+        setDeleteConfirm(prev => ({ ...prev, show: false }));
+      }
+    });
+  };
+
+  const confirmDeleteSelectedSocials = () => {
+    const ids = Array.from(selectedSocialIds);
+    setDeleteConfirm({
+      show: true,
+      title: 'Xóa nhiều Mạng Xã Hội',
+      description: `Bạn có chắc chắn muốn xóa ${ids.length} mạng xã hội đã chọn không? Hành động này không thể hoàn tác.`,
+      onConfirm: () => {
+        handleDeleteSocials(ids);
+        setDeleteConfirm(prev => ({ ...prev, show: false }));
+      }
+    });
   };
 
   const emailColumns = useMemo<Column<LeadEmail>[]>(() => [
@@ -180,10 +365,57 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
       },
       className: "px-6 py-4 font-semibold text-right font-sans",
       cellClassName: "px-6 py-4 text-right",
+    },
+    {
+      id: 'actions',
+      header: "",
+      accessor: (lead) => (
+        <div className="flex justify-end items-center" onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => confirmDeleteEmail(lead.id)}
+            className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 p-1.5 h-8 w-8 rounded-lg transition-colors duration-150"
+            title="Xóa bản ghi"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      ),
+      className: "px-6 py-4 w-16 text-right font-semibold font-sans",
+      cellClassName: "px-6 py-4 w-16 text-right",
     }
   ], [isAllFilteredSelected, selectedIds]);
 
   const phoneColumns = useMemo<Column<LeadPhone>[]>(() => [
+    {
+      id: 'select',
+      header: (
+        <div className="flex justify-center items-center">
+          <input
+            type="checkbox"
+            className="w-4 h-4 accent-primary cursor-pointer rounded bg-slate-950/60 border border-white/10 checked:bg-primary checked:border-primary focus:ring-0 focus:outline-none"
+            checked={isAllPhonesSelected}
+            onChange={(e) => handleSelectAllPhones(e)}
+          />
+        </div>
+      ),
+      accessor: (lead) => {
+        const isSelected = selectedPhoneIds.has(lead.id);
+        return (
+          <div className="flex justify-center items-center" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              className="w-4 h-4 accent-primary cursor-pointer rounded bg-slate-950/60 border border-white/10 focus:ring-0 focus:outline-none"
+              checked={isSelected}
+              onChange={(e) => handleSelectOnePhone(lead.id, e.target.checked)}
+            />
+          </div>
+        );
+      },
+      className: "p-4 w-14 text-center",
+      cellClassName: "p-4 text-center",
+    },
     {
       id: 'name',
       header: "Doanh Nghiệp / Site",
@@ -208,6 +440,7 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
           rel="noreferrer"
           title={lead.website}
           className="text-slate-400 hover:text-primary inline-flex items-center gap-1.5 hover:underline transition-colors duration-150 font-sans max-w-[180px]"
+          onClick={(e) => e.stopPropagation()}
         >
           <span className="truncate">{lead.website}</span>
           <ExternalLink className="w-3.5 h-3.5 shrink-0" />
@@ -229,10 +462,57 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
       accessor: (lead) => new Date(lead.createdAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
       className: "px-6 py-4 font-semibold text-right font-sans",
       cellClassName: "px-6 py-4 text-right text-slate-400 font-mono text-xs",
+    },
+    {
+      id: 'actions',
+      header: "",
+      accessor: (lead) => (
+        <div className="flex justify-end items-center" onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => confirmDeletePhone(lead.id)}
+            className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 p-1.5 h-8 w-8 rounded-lg transition-colors duration-150"
+            title="Xóa bản ghi"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      ),
+      className: "px-6 py-4 w-16 text-right font-semibold font-sans",
+      cellClassName: "px-6 py-4 w-16 text-right",
     }
-  ], []);
+  ], [isAllPhonesSelected, selectedPhoneIds]);
 
   const socialColumns = useMemo<Column<LeadSocial>[]>(() => [
+    {
+      id: 'select',
+      header: (
+        <div className="flex justify-center items-center">
+          <input
+            type="checkbox"
+            className="w-4 h-4 accent-primary cursor-pointer rounded bg-slate-950/60 border border-white/10 checked:bg-primary checked:border-primary focus:ring-0 focus:outline-none"
+            checked={isAllSocialsSelected}
+            onChange={(e) => handleSelectAllSocials(e)}
+          />
+        </div>
+      ),
+      accessor: (lead) => {
+        const isSelected = selectedSocialIds.has(lead.id);
+        return (
+          <div className="flex justify-center items-center" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              className="w-4 h-4 accent-primary cursor-pointer rounded bg-slate-950/60 border border-white/10 focus:ring-0 focus:outline-none"
+              checked={isSelected}
+              onChange={(e) => handleSelectOneSocial(lead.id, e.target.checked)}
+            />
+          </div>
+        );
+      },
+      className: "p-4 w-14 text-center",
+      cellClassName: "p-4 text-center",
+    },
     {
       id: 'name',
       header: "Doanh Nghiệp / Site",
@@ -261,6 +541,7 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
           rel="noreferrer"
           title={lead.url}
           className="text-slate-400 hover:text-primary inline-flex items-center gap-1.5 hover:underline transition-colors duration-150 font-sans max-w-[260px]"
+          onClick={(e) => e.stopPropagation()}
         >
           <span className="truncate">{lead.url}</span>
           <ExternalLink className="w-3.5 h-3.5 shrink-0" />
@@ -279,6 +560,7 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
           rel="noreferrer"
           title={lead.website}
           className="text-slate-400 hover:text-primary inline-flex items-center gap-1.5 hover:underline transition-colors duration-150 font-sans max-w-[180px]"
+          onClick={(e) => e.stopPropagation()}
         >
           <span className="truncate">{lead.website}</span>
           <ExternalLink className="w-3.5 h-3.5 shrink-0" />
@@ -300,8 +582,27 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
       accessor: (lead) => new Date(lead.createdAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
       className: "px-6 py-4 font-semibold text-right font-sans",
       cellClassName: "px-6 py-4 text-right text-slate-400 font-mono text-xs",
+    },
+    {
+      id: 'actions',
+      header: "",
+      accessor: (lead) => (
+        <div className="flex justify-end items-center" onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => confirmDeleteSocial(lead.id)}
+            className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 p-1.5 h-8 w-8 rounded-lg transition-colors duration-150"
+            title="Xóa bản ghi"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      ),
+      className: "px-6 py-4 w-16 text-right font-semibold font-sans",
+      cellClassName: "px-6 py-4 w-16 text-right",
     }
-  ], []);
+  ], [isAllSocialsSelected, selectedSocialIds]);
 
   const handleExportEmailsCSV = async () => {
     try {
@@ -448,6 +749,19 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
             }}
             totalAllLeadsCount={leadsCount}
             selectedCount={selectedIds.size}
+            headerExtra={
+              selectedIds.size > 0 && (
+                <Button
+                  variant="destructive"
+                  size="md-xl"
+                  onClick={confirmDeleteSelectedEmails}
+                  className="shrink-0"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Xóa đã chọn ({selectedIds.size})
+                </Button>
+              )
+            }
           />
         </TabsContent>
 
@@ -468,6 +782,25 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
             onPageChange={phones.goToPage}
             onPageSizeChange={(size) => phones.setPageSize(size)}
             onExportCSV={handleExportPhonesCSV}
+            onRowClick={(lead) => handleSelectOnePhone(lead.id, !selectedPhoneIds.has(lead.id))}
+            rowClassName={(lead) => {
+              const isSelected = selectedPhoneIds.has(lead.id);
+              return `cursor-pointer ${isSelected ? 'bg-primary/[0.03]' : ''}`;
+            }}
+            selectedCount={selectedPhoneIds.size}
+            headerExtra={
+              selectedPhoneIds.size > 0 && (
+                <Button
+                  variant="destructive"
+                  size="md-xl"
+                  onClick={confirmDeleteSelectedPhones}
+                  className="shrink-0"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Xóa đã chọn ({selectedPhoneIds.size})
+                </Button>
+              )
+            }
           />
         </TabsContent>
 
@@ -488,9 +821,37 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
             onPageChange={socials.goToPage}
             onPageSizeChange={(size) => socials.setPageSize(size)}
             onExportCSV={handleExportSocialsCSV}
+            onRowClick={(lead) => handleSelectOneSocial(lead.id, !selectedSocialIds.has(lead.id))}
+            rowClassName={(lead) => {
+              const isSelected = selectedSocialIds.has(lead.id);
+              return `cursor-pointer ${isSelected ? 'bg-primary/[0.03]' : ''}`;
+            }}
+            selectedCount={selectedSocialIds.size}
+            headerExtra={
+              selectedSocialIds.size > 0 && (
+                <Button
+                  variant="destructive"
+                  size="md-xl"
+                  onClick={confirmDeleteSelectedSocials}
+                  className="shrink-0"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Xóa đã chọn ({selectedSocialIds.size})
+                </Button>
+              )
+            }
           />
         </TabsContent>
       </Tabs>
+
+      <ConfirmDialog
+        open={deleteConfirm.show}
+        onOpenChange={(show) => setDeleteConfirm(prev => ({ ...prev, show }))}
+        title={deleteConfirm.title}
+        description={deleteConfirm.description}
+        onConfirm={deleteConfirm.onConfirm}
+        variant="destructive"
+      />
     </div>
   );
 }

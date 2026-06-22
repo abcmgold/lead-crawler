@@ -21,6 +21,11 @@ async function getLeadEmails(req, res) {
 }
 
 async function clearLeadEmails(req, res) {
+  const { ids } = req.body;
+  if (ids) {
+    await dbRepo.deleteLeadEmails(ids);
+    return res.json({ message: 'Đã xóa các leads email được chọn' });
+  }
   await dbRepo.clearLeadEmails();
   res.json({ message: 'Đã xóa toàn bộ leads email' });
 }
