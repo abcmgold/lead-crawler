@@ -313,7 +313,7 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
             <Input
               type={showOldPass ? "text" : "password"}
               className="font-mono pr-10"
-              placeholder="Nhập mật khẩu hiện tại"
+              placeholder="Mật khẩu hiện tại"
               value={oldPassword}
               onChange={(e) => setOldPassword(e.target.value)}
               disabled={isSaving}
@@ -321,7 +321,7 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
             <button
               type="button"
               onClick={() => setShowOldPass(!showOldPass)}
-              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors"
+              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors cursor-pointer"
             >
               {showOldPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -335,7 +335,7 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
               <Input
                 type={showNewPass ? "text" : "password"}
                 className="font-mono pr-10"
-                placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                placeholder="Mật khẩu mới (>= 6 ký tự)"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 disabled={isSaving}
@@ -343,7 +343,7 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
               <button
                 type="button"
                 onClick={() => setShowNewPass(!showNewPass)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors"
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors cursor-pointer"
               >
                 {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -355,7 +355,7 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
               <Input
                 type={showConfirmPass ? "text" : "password"}
                 className="font-mono pr-10"
-                placeholder="Nhập lại mật khẩu mới để xác nhận"
+                placeholder="Xác nhận mật khẩu mới"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={isSaving}
@@ -363,7 +363,7 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
               <button
                 type="button"
                 onClick={() => setShowConfirmPass(!showConfirmPass)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors"
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors cursor-pointer"
               >
                 {showConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
