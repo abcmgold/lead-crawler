@@ -1,6 +1,8 @@
 const dbRepo = require('../repositories/db.repository');
 
 const EMPTY_SETTINGS = {
+  id: null,
+  userId: '',
   host: '',
   port: '',
   user: '',
@@ -10,21 +12,21 @@ const EMPTY_SETTINGS = {
   senderEmail: ''
 };
 
-// SMTP settings are stored in the smtp_settings table (single row, id = 1)
-async function getSettings() {
-  const settings = await dbRepo.getSmtpSettings();
+// SMTP settings are stored in the smtp_settings table per user
+async function getSettings(userId) {
+  const settings = await dbRepo.getSmtpSettings(userId);
   return settings || { ...EMPTY_SETTINGS };
 }
 
-async function getPublicSettings() {
-  const settings = await getSettings();
+async function getPublicSettings(userId) {
+  const settings = await getSettings(userId);
   return { ...settings, pass: settings.pass ? '********' : '' };
 }
 
 // Persists new SMTP settings. If `pass` is blank or the masked placeholder,
 // the previously stored password is kept unchanged.
-async function saveSettings(data) {
-  const current = await getSettings();
+async function saveSettings(userId, data) {
+  const current = await getSettings(userId);
   const pass = (!data.pass || data.pass === '********') ? current.pass : data.pass;
 
   const updated = {
@@ -37,7 +39,7 @@ async function saveSettings(data) {
     senderEmail: data.senderEmail || ''
   };
 
-  await dbRepo.saveSmtpSettings(updated);
+  await dbRepo.saveSmtpSettings(userId, updated);
   return updated;
 }
 

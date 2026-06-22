@@ -15,9 +15,16 @@ async function sendEmails(req, res) {
     return res.status(400).json({ error: 'Tiêu đề và nội dung email không được bỏ trống' });
   }
 
-  const smtp = await settingsService.getSettings();
+  let userId = req.user && req.user.id;
+  if (!userId) {
+    const dbRepo = require('../repositories/db.repository');
+    const account = await dbRepo.findUserByUsername(req.user.username);
+    if (account) userId = account.id;
+  }
+
+  const smtp = await settingsService.getSettings(userId);
   if (!smtp.host || !smtp.user || !smtp.pass) {
-    return res.status(400).json({ error: 'SMTP chưa được cấu hình trên server (.env)' });
+    return res.status(400).json({ error: 'Bạn chưa cấu hình SMTP trong phần Cài đặt.' });
   }
 
   try {

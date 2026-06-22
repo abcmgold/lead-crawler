@@ -49,6 +49,7 @@ async function changePassword(req, res) {
   // Re-sign token since user has changed their password
   const jwt = require('jsonwebtoken');
   const updatedUser = {
+    id: req.user.id,
     username: req.user.username,
     role: req.user.role,
     needsPasswordChange: false

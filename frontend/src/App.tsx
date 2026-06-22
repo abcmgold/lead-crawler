@@ -145,7 +145,7 @@ export default function App() {
                 </p>
               </div>
 
-              <div className="border border-white/5 bg-slate-950/30 p-6 rounded-2xl">
+              <div className="pt-2">
                 <SettingsTab
                   smtpSettings={smtpSettings}
                   onSettingsUpdated={setSmtpSettings}

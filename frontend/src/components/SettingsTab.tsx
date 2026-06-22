@@ -239,7 +239,7 @@ function SmtpSettingsForm({ smtpSettings, onSettingsUpdated, showToast }: Settin
   );
 }
 
-function ChangePasswordForm({ showToast }: { showToast: (message: string, isError?: boolean) => void }) {
+function ChangePasswordForm({ showToast, hideHeader = false }: { showToast: (message: string, isError?: boolean) => void; hideHeader?: boolean }) {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -296,15 +296,17 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <h3 className="text-xl font-bold text-white flex items-center gap-2">
-          <KeyRound className="w-5.5 h-5.5 text-primary" />
-          Đổi Mật Khẩu Đăng Nhập
-        </h3>
-        <p className="text-sm text-slate-400 mt-1 leading-relaxed">
-          Cập nhật mật khẩu cho tài khoản hiện tại.
-        </p>
-      </div>
+      {!hideHeader && (
+        <div>
+          <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            <KeyRound className="w-5.5 h-5.5 text-primary" />
+            Đổi Mật Khẩu Đăng Nhập
+          </h3>
+          <p className="text-sm text-slate-400 mt-1 leading-relaxed">
+            Cập nhật mật khẩu cho tài khoản hiện tại.
+          </p>
+        </div>
+      )}
 
       <div className="space-y-5 max-w-2xl">
         <div className="flex flex-col gap-1.5">
@@ -328,7 +330,7 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-slate-400">Mật khẩu mới</label>
             <div className="relative">

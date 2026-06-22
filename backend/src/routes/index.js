@@ -1,6 +1,5 @@
 const express = require('express');
 const authenticate = require('../middlewares/auth.middleware');
-const authorize = require('../middlewares/authorize.middleware');
 
 const authRoutes = require('./auth.routes');
 const leadsRoutes = require('./leads.routes');
@@ -17,7 +16,7 @@ router.use('/leads', authenticate, leadsRoutes);
 router.use('/crawl', authenticate, crawlRoutes);
 router.use('/history', authenticate, historyRoutes);
 router.use('/send-emails', authenticate, emailRoutes);
-router.use('/settings', authenticate, authorize('ADMIN'), settingsRoutes);
+router.use('/settings', authenticate, settingsRoutes);
 router.use('/templates', authenticate, templatesRoutes);
 
 module.exports = router;

@@ -12,6 +12,7 @@ async function login(username, password) {
   if (!bcrypt.compareSync(password, account.passwordHash)) return null;
 
   const user = {
+    id: account.id,
     username: account.username,
     role: account.role,
     needsPasswordChange: account.needsPasswordChange

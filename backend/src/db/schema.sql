@@ -66,15 +66,15 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS smtp_settings (
-  id INTEGER PRIMARY KEY DEFAULT 1,
+  id SERIAL PRIMARY KEY,
+  user_id TEXT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
   host TEXT NOT NULL DEFAULT '',  
   port TEXT NOT NULL DEFAULT '',
   smtp_user TEXT NOT NULL DEFAULT '',
   smtp_pass TEXT NOT NULL DEFAULT '',
   secure BOOLEAN NOT NULL DEFAULT false,
   sender_name TEXT NOT NULL DEFAULT '',
-  sender_email TEXT NOT NULL DEFAULT '',
-  CONSTRAINT smtp_settings_singleton CHECK (id = 1)
+  sender_email TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS email_templates (

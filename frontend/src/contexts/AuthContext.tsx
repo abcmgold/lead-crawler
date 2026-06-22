@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { apiFetch } from '@/lib/api';
 
 export interface AuthUser {
+  id: string;
   username: string;
   role: string;
   needsPasswordChange?: boolean;

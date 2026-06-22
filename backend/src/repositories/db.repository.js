@@ -442,6 +442,8 @@ async function updateUserPassword(id, passwordHash) {
 
 function rowToSmtpSettings(row) {
   return {
+    id: row.id,
+    userId: row.user_id,
     host: row.host,
     port: row.port,
     user: row.smtp_user,
@@ -452,16 +454,18 @@ function rowToSmtpSettings(row) {
   };
 }
 
-async function getSmtpSettings() {
-  const { rows } = await pool.query('SELECT * FROM smtp_settings WHERE id = 1');
+async function getSmtpSettings(userId) {
+  if (!userId) return null;
+  const { rows } = await pool.query('SELECT * FROM smtp_settings WHERE user_id = $1', [userId]);
   return rows[0] ? rowToSmtpSettings(rows[0]) : null;
 }
 
-async function saveSmtpSettings(settings) {
+async function saveSmtpSettings(userId, settings) {
+  if (!userId) return;
   await pool.query(
-    `INSERT INTO smtp_settings (id, host, port, smtp_user, smtp_pass, secure, sender_name, sender_email)
-     VALUES (1, $1, $2, $3, $4, $5, $6, $7)
-     ON CONFLICT (id) DO UPDATE SET
+    `INSERT INTO smtp_settings (user_id, host, port, smtp_user, smtp_pass, secure, sender_name, sender_email)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     ON CONFLICT (user_id) DO UPDATE SET
        host = EXCLUDED.host,
        port = EXCLUDED.port,
        smtp_user = EXCLUDED.smtp_user,
@@ -469,7 +473,7 @@ async function saveSmtpSettings(settings) {
        secure = EXCLUDED.secure,
        sender_name = EXCLUDED.sender_name,
        sender_email = EXCLUDED.sender_email`,
-    [settings.host, settings.port, settings.user, settings.pass, settings.secure, settings.senderName, settings.senderEmail]
+    [userId, settings.host, settings.port, settings.user, settings.pass, settings.secure, settings.senderName, settings.senderEmail]
   );
 }
 
