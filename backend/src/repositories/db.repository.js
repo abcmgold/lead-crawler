@@ -426,7 +426,8 @@ function rowToUser(row) {
     id: row.id,
     username: row.username,
     passwordHash: row.password_hash,
-    role: row.role
+    role: row.role,
+    needsPasswordChange: row.needs_password_change
   };
 }
 
@@ -436,7 +437,7 @@ async function findUserByUsername(username) {
 }
 
 async function updateUserPassword(id, passwordHash) {
-  await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [passwordHash, id]);
+  await pool.query('UPDATE users SET password_hash = $1, needs_password_change = false WHERE id = $2', [passwordHash, id]);
 }
 
 function rowToSmtpSettings(row) {

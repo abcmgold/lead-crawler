@@ -1,18 +1,28 @@
 import { useEffect, useState } from 'react';
-import { ShieldCheck, Mail, Key, Server, Hash, UserCheck, Save, Loader2, KeyRound, Palette, Check } from 'lucide-react';
+import { ShieldCheck, Mail, Key, Server, Hash, UserCheck, Save, Loader2, KeyRound, Palette, Check, Eye, EyeOff } from 'lucide-react';
 import { SmtpSettings } from './types';
 import { apiFetch } from '@/lib/api';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SettingsTabProps {
   smtpSettings: SmtpSettings;
   onSettingsUpdated: (settings: SmtpSettings) => void;
   showToast: (message: string, isError?: boolean) => void;
+  forcedPasswordMode?: boolean;
 }
 
-export default function SettingsTab({ smtpSettings, onSettingsUpdated, showToast }: SettingsTabProps) {
+export default function SettingsTab({ smtpSettings, onSettingsUpdated, showToast, forcedPasswordMode = false }: SettingsTabProps) {
+  if (forcedPasswordMode) {
+    return (
+      <div className="w-full relative overflow-hidden">
+        <ChangePasswordForm showToast={showToast} />
+      </div>
+    );
+  }
+
   return (
     <div className="glass-panel border border-white/5 rounded-2xl p-6 md:p-8 shadow-xl animate-scale-in w-full relative overflow-hidden">
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] rounded-full pointer-events-none" />
@@ -235,6 +245,12 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  const [showOldPass, setShowOldPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+
+  const { updateUser } = useAuth();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -265,6 +281,9 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
       }
 
       showToast('Đổi mật khẩu thành công.');
+      if (data.user) {
+        updateUser(data.user);
+      }
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -283,42 +302,72 @@ function ChangePasswordForm({ showToast }: { showToast: (message: string, isErro
           Đổi Mật Khẩu Đăng Nhập
         </h3>
         <p className="text-sm text-slate-400 mt-1 leading-relaxed">
-          Cập nhật mật khẩu cho tài khoản admin hiện tại.
+          Cập nhật mật khẩu cho tài khoản hiện tại.
         </p>
       </div>
 
       <div className="space-y-5 max-w-2xl">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-400">Mật khẩu hiện tại</label>
-          <Input
-            type="password"
-            className="font-mono"
-            value={oldPassword}
-            onChange={(e) => setOldPassword(e.target.value)}
-            disabled={isSaving}
-          />
+          <div className="relative">
+            <Input
+              type={showOldPass ? "text" : "password"}
+              className="font-mono pr-10"
+              placeholder="Nhập mật khẩu hiện tại"
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              disabled={isSaving}
+            />
+            <button
+              type="button"
+              onClick={() => setShowOldPass(!showOldPass)}
+              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors"
+            >
+              {showOldPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-slate-400">Mật khẩu mới</label>
-            <Input
-              type="password"
-              className="font-mono"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              disabled={isSaving}
-            />
+            <div className="relative">
+              <Input
+                type={showNewPass ? "text" : "password"}
+                className="font-mono pr-10"
+                placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                disabled={isSaving}
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPass(!showNewPass)}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors"
+              >
+                {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-slate-400">Xác nhận mật khẩu mới</label>
-            <Input
-              type="password"
-              className="font-mono"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={isSaving}
-            />
+            <div className="relative">
+              <Input
+                type={showConfirmPass ? "text" : "password"}
+                className="font-mono pr-10"
+                placeholder="Nhập lại mật khẩu mới để xác nhận"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={isSaving}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPass(!showConfirmPass)}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors"
+              >
+                {showConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
         </div>
 

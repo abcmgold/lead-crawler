@@ -127,6 +127,49 @@ export default function App() {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
+  // First time login check: force change password before accessing app
+  if (user.needsPasswordChange) {
+    return (
+      <div className="min-h-screen bg-background text-foreground font-sans antialiased relative flex flex-col justify-center items-center px-4">
+        <BackgroundOrbs />
+        <div className="w-full max-w-lg z-10 relative">
+          <div className="glass-panel border border-white/5 rounded-3xl p-8 shadow-2xl relative overflow-hidden bg-slate-950/20 backdrop-blur-md">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] rounded-full pointer-events-none" />
+            <div className="relative z-10 space-y-6">
+              <div className="text-center space-y-2">
+                <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-to bg-clip-text text-transparent glow-text font-mono uppercase tracking-wider block">
+                  Yêu Cầu Đổi Mật Khẩu
+                </span>
+                <p className="text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
+                  Đây là lần đầu tiên bạn đăng nhập vào tài khoản <span className="font-semibold text-primary">{user.username}</span>. Bạn bắt buộc phải đổi mật khẩu mới để tiếp tục truy cập ứng dụng.
+                </p>
+              </div>
+
+              <div className="border border-white/5 bg-slate-950/30 p-6 rounded-2xl">
+                <SettingsTab
+                  smtpSettings={smtpSettings}
+                  onSettingsUpdated={setSmtpSettings}
+                  showToast={showToast}
+                  forcedPasswordMode={true}
+                />
+              </div>
+
+              <div className="flex justify-center pt-2">
+                <button
+                  onClick={logout}
+                  className="text-sm text-slate-500 hover:text-rose-400 hover:underline transition-colors duration-150 cursor-pointer"
+                >
+                  Đăng xuất tài khoản
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <NotificationToast show={toast.show} message={toast.message} isError={toast.isError} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground font-sans antialiased relative flex flex-col">
 

@@ -45,7 +45,18 @@ async function changePassword(req, res) {
   if (!result.success) {
     return res.status(400).json({ error: result.error });
   }
-  res.json({ message: 'Đổi mật khẩu thành công' });
+
+  // Re-sign token since user has changed their password
+  const jwt = require('jsonwebtoken');
+  const updatedUser = {
+    username: req.user.username,
+    role: req.user.role,
+    needsPasswordChange: false
+  };
+  const token = jwt.sign(updatedUser, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
+  res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS);
+
+  res.json({ message: 'Đổi mật khẩu thành công', user: updatedUser });
 }
 
 module.exports = { login, logout, me, changePassword };

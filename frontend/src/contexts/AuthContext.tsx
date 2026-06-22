@@ -4,6 +4,7 @@ import { apiFetch } from '@/lib/api';
 export interface AuthUser {
   username: string;
   role: string;
+  needsPasswordChange?: boolean;
 }
 
 interface AuthContextType {
@@ -11,6 +12,7 @@ interface AuthContextType {
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (user: AuthUser) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -65,8 +67,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const updateUser = (u: AuthUser) => {
+    setUser(u);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

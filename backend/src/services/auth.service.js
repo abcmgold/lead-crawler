@@ -11,7 +11,11 @@ async function login(username, password) {
   if (!account) return null;
   if (!bcrypt.compareSync(password, account.passwordHash)) return null;
 
-  const user = { username: account.username, role: account.role };
+  const user = {
+    username: account.username,
+    role: account.role,
+    needsPasswordChange: account.needsPasswordChange
+  };
   const token = jwt.sign(user, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
   return { token, user };
 }
