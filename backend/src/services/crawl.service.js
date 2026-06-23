@@ -568,8 +568,8 @@ function getDirectUrl(input) {
 }
 
 // Orchestrates a full search+crawl run for a keyword/URL, persisting new leads and a history log entry
-async function performCrawl(keyword) {
-  logSystem(`Yêu cầu cào dữ liệu bắt đầu. Từ khóa/URL: "${keyword}"`, 'INFO');
+async function performCrawl(keyword, userId) {
+  logSystem(`Yêu cầu cào dữ liệu bắt đầu. Từ khóa/URL: "${keyword}" | User ID: ${userId}`, 'INFO');
   let urls = [];
   const directUrl = getDirectUrl(keyword);
 
@@ -647,13 +647,13 @@ async function performCrawl(keyword) {
   let newPhonesCount = 0;
   let newSocialsCount = 0;
 
-  // Retrieve all existing emails/phones/socials in the database before starting the crawl session
+  // Retrieve all existing emails/phones/socials in the database for THIS user before starting the crawl session
   const dedupeSets = {
-    existingEmails: await dbRepo.getAllLeadEmailAddresses(),
+    existingEmails: await dbRepo.getAllLeadEmailAddresses(userId),
     addedEmails: new Set(),
-    existingPhones: await dbRepo.getAllLeadPhoneNumbers(),
+    existingPhones: await dbRepo.getAllLeadPhoneNumbers(userId),
     addedPhones: new Set(),
-    existingSocials: await dbRepo.getAllLeadSocialKeys(),
+    existingSocials: await dbRepo.getAllLeadSocialKeys(userId),
     addedSocials: new Set()
   };
 
@@ -670,7 +670,7 @@ async function performCrawl(keyword) {
         results.push(crawled);
         logSystem(`Crawl website: ${url} | Trạng thái: ${crawled.status} | Emails tìm thấy: ${crawled.emails.length}`, 'INFO');
 
-        const { newEmails, newPhones, newSocials } = await leadService.recordCrawlResult(crawled, keyword, logId, dedupeSets);
+        const { newEmails, newPhones, newSocials } = await leadService.recordCrawlResult(userId, crawled, keyword, logId, dedupeSets);
         newEmailsCount += newEmails;
         newPhonesCount += newPhones;
         newSocialsCount += newSocials;
@@ -682,7 +682,7 @@ async function performCrawl(keyword) {
 
   await Promise.all(workers);
 
-  await dbRepo.addLog({
+  await dbRepo.addLog(userId, {
     id: logId,
     keyword,
     timestamp: new Date().toISOString(),

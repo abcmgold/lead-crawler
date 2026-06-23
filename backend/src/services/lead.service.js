@@ -3,11 +3,11 @@ const dbRepo = require('../repositories/db.repository');
 // Persists a single crawled URL's results: the crawled_urls row plus any
 // emails/phones/socials found on it, each deduped independently.
 // `dedupeSets` tracks existing + session-added keys across the whole crawl run.
-async function recordCrawlResult(crawled, keyword, crawlLogId, dedupeSets) {
+async function recordCrawlResult(userId, crawled, keyword, crawlLogId, dedupeSets) {
   const urlId = '_' + Math.random().toString(36).substr(2, 9);
   const now = new Date().toISOString();
 
-  await dbRepo.insertCrawledUrl({
+  await dbRepo.insertCrawledUrl(userId, {
     id: urlId,
     url: crawled.url,
     title: crawled.title,
@@ -24,7 +24,7 @@ async function recordCrawlResult(crawled, keyword, crawlLogId, dedupeSets) {
 
   for (const email of crawled.emails) {
     const emailLower = email.toLowerCase().trim();
-    await dbRepo.upsertLeadEmail({
+    await dbRepo.upsertLeadEmail(userId, {
       id: '_' + Math.random().toString(36).substr(2, 9),
       email: emailLower,
       name: crawled.title,
@@ -43,7 +43,7 @@ async function recordCrawlResult(crawled, keyword, crawlLogId, dedupeSets) {
   }
 
   for (const phone of [...new Set(crawled.phones)]) {
-    await dbRepo.upsertLeadPhone({
+    await dbRepo.upsertLeadPhone(userId, {
       id: '_' + Math.random().toString(36).substr(2, 9),
       phone,
       name: crawled.title,
@@ -62,7 +62,7 @@ async function recordCrawlResult(crawled, keyword, crawlLogId, dedupeSets) {
 
   for (const social of crawled.socials) {
     const key = `${social.platform}|${social.url}`;
-    await dbRepo.upsertLeadSocial({
+    await dbRepo.upsertLeadSocial(userId, {
       id: '_' + Math.random().toString(36).substr(2, 9),
       platform: social.platform,
       url: social.url,

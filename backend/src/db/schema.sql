@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS crawl_logs (
   id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   keyword TEXT NOT NULL,
   "timestamp" TIMESTAMPTZ NOT NULL DEFAULT now(),
   urls_count INTEGER NOT NULL DEFAULT 0,
@@ -12,6 +13,7 @@ ALTER TABLE crawl_logs ADD COLUMN IF NOT EXISTS new_socials_count INTEGER NOT NU
 
 CREATE TABLE IF NOT EXISTS crawled_urls (
   id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   url TEXT NOT NULL,
   title TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT '',
@@ -23,29 +25,34 @@ CREATE TABLE IF NOT EXISTS crawled_urls (
 
 CREATE TABLE IF NOT EXISTS lead_emails (
   id TEXT PRIMARY KEY,
-  email TEXT NOT NULL UNIQUE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
   name TEXT NOT NULL DEFAULT '',
   website TEXT NOT NULL DEFAULT '',
   keyword TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   email_status TEXT NOT NULL DEFAULT 'Chưa gửi',
   crawl_log_id TEXT,
-  url_id TEXT
+  url_id TEXT,
+  UNIQUE(user_id, email)
 );
 
 CREATE TABLE IF NOT EXISTS lead_phones (
   id TEXT PRIMARY KEY,
-  phone TEXT NOT NULL UNIQUE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  phone TEXT NOT NULL,
   name TEXT NOT NULL DEFAULT '',
   website TEXT NOT NULL DEFAULT '',
   keyword TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   crawl_log_id TEXT,
-  url_id TEXT
+  url_id TEXT,
+  UNIQUE(user_id, phone)
 );
 
 CREATE TABLE IF NOT EXISTS lead_socials (
   id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   platform TEXT NOT NULL,
   url TEXT NOT NULL,
   name TEXT NOT NULL DEFAULT '',
@@ -54,7 +61,7 @@ CREATE TABLE IF NOT EXISTS lead_socials (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   crawl_log_id TEXT,
   url_id TEXT,
-  UNIQUE(platform, url)
+  UNIQUE(user_id, platform, url)
 );
 
 CREATE TABLE IF NOT EXISTS users (

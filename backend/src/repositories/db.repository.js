@@ -3,6 +3,7 @@ const pool = require('../db/pool');
 function rowToLeadEmail(row) {
   return {
     id: row.id,
+    userId: row.user_id,
     email: row.email,
     name: row.name,
     website: row.website,
@@ -17,6 +18,7 @@ function rowToLeadEmail(row) {
 function rowToLeadPhone(row) {
   return {
     id: row.id,
+    userId: row.user_id,
     phone: row.phone,
     name: row.name,
     website: row.website,
@@ -30,6 +32,7 @@ function rowToLeadPhone(row) {
 function rowToLeadSocial(row) {
   return {
     id: row.id,
+    userId: row.user_id,
     platform: row.platform,
     url: row.url,
     name: row.name,
@@ -44,6 +47,7 @@ function rowToLeadSocial(row) {
 function rowToLog(row) {
   return {
     id: row.id,
+    userId: row.user_id,
     keyword: row.keyword,
     timestamp: row.timestamp.toISOString(),
     urlsCount: row.urls_count,
@@ -53,7 +57,7 @@ function rowToLog(row) {
   };
 }
 
-async function getLeadEmailsPaginated({ page = 1, limit = 25, search = '', crawlLogId = '' }) {
+async function getLeadEmailsPaginated({ page = 1, limit = 25, search = '', crawlLogId = '', userId = null }) {
   const offset = (page - 1) * limit;
   const params = [];
   let query = 'SELECT * FROM lead_emails';
@@ -70,6 +74,12 @@ async function getLeadEmailsPaginated({ page = 1, limit = 25, search = '', crawl
     params.push(crawlLogId);
     const logIdx = params.length;
     conditions.push(`crawl_log_id = $${logIdx}`);
+  }
+
+  if (userId) {
+    params.push(userId);
+    const userIdx = params.length;
+    conditions.push(`user_id = $${userIdx}`);
   }
 
   if (conditions.length > 0) {
@@ -94,7 +104,7 @@ async function getLeadEmailsPaginated({ page = 1, limit = 25, search = '', crawl
   };
 }
 
-async function getLeadEmailsFiltered({ search = '', crawlLogId = '' } = {}) {
+async function getLeadEmailsFiltered({ search = '', crawlLogId = '', userId = null } = {}) {
   const params = [];
   let query = 'SELECT * FROM lead_emails';
   let conditions = [];
@@ -111,6 +121,12 @@ async function getLeadEmailsFiltered({ search = '', crawlLogId = '' } = {}) {
     conditions.push(`crawl_log_id = $${logIdx}`);
   }
 
+  if (userId) {
+    params.push(userId);
+    const userIdx = params.length;
+    conditions.push(`user_id = $${userIdx}`);
+  }
+
   if (conditions.length > 0) {
     query += ' WHERE ' + conditions.join(' AND ');
   }
@@ -121,7 +137,7 @@ async function getLeadEmailsFiltered({ search = '', crawlLogId = '' } = {}) {
   return rows.map(rowToLeadEmail);
 }
 
-async function getLeadPhonesPaginated({ page = 1, limit = 25, search = '', crawlLogId = '' }) {
+async function getLeadPhonesPaginated({ page = 1, limit = 25, search = '', crawlLogId = '', userId = null }) {
   const offset = (page - 1) * limit;
   const params = [];
   let query = 'SELECT * FROM lead_phones';
@@ -138,6 +154,12 @@ async function getLeadPhonesPaginated({ page = 1, limit = 25, search = '', crawl
     params.push(crawlLogId);
     const logIdx = params.length;
     conditions.push(`crawl_log_id = $${logIdx}`);
+  }
+
+  if (userId) {
+    params.push(userId);
+    const userIdx = params.length;
+    conditions.push(`user_id = $${userIdx}`);
   }
 
   if (conditions.length > 0) {
@@ -162,7 +184,7 @@ async function getLeadPhonesPaginated({ page = 1, limit = 25, search = '', crawl
   };
 }
 
-async function getLeadPhonesFiltered({ search = '', crawlLogId = '' } = {}) {
+async function getLeadPhonesFiltered({ search = '', crawlLogId = '', userId = null } = {}) {
   const params = [];
   let query = 'SELECT * FROM lead_phones';
   let conditions = [];
@@ -179,6 +201,12 @@ async function getLeadPhonesFiltered({ search = '', crawlLogId = '' } = {}) {
     conditions.push(`crawl_log_id = $${logIdx}`);
   }
 
+  if (userId) {
+    params.push(userId);
+    const userIdx = params.length;
+    conditions.push(`user_id = $${userIdx}`);
+  }
+
   if (conditions.length > 0) {
     query += ' WHERE ' + conditions.join(' AND ');
   }
@@ -189,7 +217,7 @@ async function getLeadPhonesFiltered({ search = '', crawlLogId = '' } = {}) {
   return rows.map(rowToLeadPhone);
 }
 
-async function getLeadSocialsPaginated({ page = 1, limit = 25, search = '', crawlLogId = '' }) {
+async function getLeadSocialsPaginated({ page = 1, limit = 25, search = '', crawlLogId = '', userId = null }) {
   const offset = (page - 1) * limit;
   const params = [];
   let query = 'SELECT * FROM lead_socials';
@@ -206,6 +234,12 @@ async function getLeadSocialsPaginated({ page = 1, limit = 25, search = '', craw
     params.push(crawlLogId);
     const logIdx = params.length;
     conditions.push(`crawl_log_id = $${logIdx}`);
+  }
+
+  if (userId) {
+    params.push(userId);
+    const userIdx = params.length;
+    conditions.push(`user_id = $${userIdx}`);
   }
 
   if (conditions.length > 0) {
@@ -230,7 +264,7 @@ async function getLeadSocialsPaginated({ page = 1, limit = 25, search = '', craw
   };
 }
 
-async function getLeadSocialsFiltered({ search = '', crawlLogId = '' } = {}) {
+async function getLeadSocialsFiltered({ search = '', crawlLogId = '', userId = null } = {}) {
   const params = [];
   let query = 'SELECT * FROM lead_socials';
   let conditions = [];
@@ -247,6 +281,12 @@ async function getLeadSocialsFiltered({ search = '', crawlLogId = '' } = {}) {
     conditions.push(`crawl_log_id = $${logIdx}`);
   }
 
+  if (userId) {
+    params.push(userId);
+    const userIdx = params.length;
+    conditions.push(`user_id = $${userIdx}`);
+  }
+
   if (conditions.length > 0) {
     query += ' WHERE ' + conditions.join(' AND ');
   }
@@ -257,56 +297,72 @@ async function getLeadSocialsFiltered({ search = '', crawlLogId = '' } = {}) {
   return rows.map(rowToLeadSocial);
 }
 
-async function getAllLeadEmails() {
-  const { rows } = await pool.query('SELECT * FROM lead_emails ORDER BY created_at ASC');
+async function getAllLeadEmails(userId = null) {
+  const query = userId 
+    ? 'SELECT * FROM lead_emails WHERE user_id = $1 ORDER BY created_at ASC'
+    : 'SELECT * FROM lead_emails ORDER BY created_at ASC';
+  const params = userId ? [userId] : [];
+  const { rows } = await pool.query(query, params);
   return rows.map(rowToLeadEmail);
 }
 
-async function getAllLeadEmailAddresses() {
-  const { rows } = await pool.query('SELECT email FROM lead_emails');
+async function getAllLeadEmailAddresses(userId = null) {
+  const query = userId 
+    ? 'SELECT email FROM lead_emails WHERE user_id = $1'
+    : 'SELECT email FROM lead_emails';
+  const params = userId ? [userId] : [];
+  const { rows } = await pool.query(query, params);
   return new Set(rows.map(r => r.email.toLowerCase()));
 }
 
-async function getAllLeadPhoneNumbers() {
-  const { rows } = await pool.query('SELECT phone FROM lead_phones');
+async function getAllLeadPhoneNumbers(userId = null) {
+  const query = userId 
+    ? 'SELECT phone FROM lead_phones WHERE user_id = $1'
+    : 'SELECT phone FROM lead_phones';
+  const params = userId ? [userId] : [];
+  const { rows } = await pool.query(query, params);
   return new Set(rows.map(r => r.phone));
 }
 
-async function getAllLeadSocialKeys() {
-  const { rows } = await pool.query('SELECT platform, url FROM lead_socials');
+async function getAllLeadSocialKeys(userId = null) {
+  const query = userId 
+    ? 'SELECT platform, url FROM lead_socials WHERE user_id = $1'
+    : 'SELECT platform, url FROM lead_socials';
+  const params = userId ? [userId] : [];
+  const { rows } = await pool.query(query, params);
   return new Set(rows.map(r => `${r.platform}|${r.url}`));
 }
 
-async function upsertLeadEmail(lead) {
+async function upsertLeadEmail(userId, lead) {
   await pool.query(
-    `INSERT INTO lead_emails (id, email, name, website, keyword, created_at, email_status, crawl_log_id, url_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-     ON CONFLICT (email) DO UPDATE SET
+    `INSERT INTO lead_emails (id, user_id, email, name, website, keyword, created_at, email_status, crawl_log_id, url_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+     ON CONFLICT (user_id, email) DO UPDATE SET
        name = COALESCE(NULLIF(EXCLUDED.name, ''), lead_emails.name),
        website = COALESCE(NULLIF(EXCLUDED.website, ''), lead_emails.website)`,
-    [lead.id, lead.email, lead.name, lead.website, lead.keyword, lead.createdAt, lead.emailStatus, lead.crawlLogId || null, lead.urlId || null]
+    [lead.id, userId, lead.email, lead.name, lead.website, lead.keyword, lead.createdAt, lead.emailStatus, lead.crawlLogId || null, lead.urlId || null]
   );
 }
 
-async function upsertLeadPhone(lead) {
+async function upsertLeadPhone(userId, lead) {
   await pool.query(
-    `INSERT INTO lead_phones (id, phone, name, website, keyword, created_at, crawl_log_id, url_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-     ON CONFLICT (phone) DO UPDATE SET
+    `INSERT INTO lead_phones (id, user_id, phone, name, website, keyword, created_at, crawl_log_id, url_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     ON CONFLICT (user_id, phone) DO UPDATE SET
        name = COALESCE(NULLIF(EXCLUDED.name, ''), lead_phones.name),
        website = COALESCE(NULLIF(EXCLUDED.website, ''), lead_phones.website)`,
-    [lead.id, lead.phone, lead.name, lead.website, lead.keyword, lead.createdAt, lead.crawlLogId || null, lead.urlId || null]
+    [lead.id, userId, lead.phone, lead.name, lead.website, lead.keyword, lead.createdAt, lead.crawlLogId || null, lead.urlId || null]
   );
 }
 
-async function upsertLeadSocial(social) {
+async function upsertLeadSocial(userId, social) {
   await pool.query(
-    `INSERT INTO lead_socials (id, platform, url, name, website, keyword, created_at, crawl_log_id, url_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-     ON CONFLICT (platform, url) DO UPDATE SET
+    `INSERT INTO lead_socials (id, user_id, platform, url, name, website, keyword, created_at, crawl_log_id, url_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+     ON CONFLICT (user_id, platform, url) DO UPDATE SET
        name = COALESCE(NULLIF(EXCLUDED.name, ''), lead_socials.name),
        website = COALESCE(NULLIF(EXCLUDED.website, ''), lead_socials.website)`,
-    [social.id, social.platform, social.url, social.name, social.website, social.keyword, social.createdAt, social.crawlLogId || null, social.urlId || null]
+    [social.id, userId, social.platform, social.url, social.name, social.website, social.keyword, social.createdAt, social.crawlLogId || null, social.urlId || null]
   );
 }
 
@@ -314,64 +370,94 @@ async function updateLeadEmailStatus(id, emailStatus) {
   await pool.query('UPDATE lead_emails SET email_status = $1 WHERE id = $2', [emailStatus, id]);
 }
 
-async function clearLeadEmails() {
-  await pool.query('DELETE FROM lead_emails');
+async function clearLeadEmails(userId = null) {
+  if (userId) {
+    await pool.query('DELETE FROM lead_emails WHERE user_id = $1', [userId]);
+  } else {
+    await pool.query('DELETE FROM lead_emails');
+  }
 }
 
-async function deleteLeadEmails(ids) {
+async function deleteLeadEmails(userId, ids) {
   if (!Array.isArray(ids)) ids = [ids];
   if (ids.length === 0) return;
-  await pool.query('DELETE FROM lead_emails WHERE id = ANY($1)', [ids]);
+  if (userId) {
+    await pool.query('DELETE FROM lead_emails WHERE id = ANY($1) AND user_id = $2', [ids, userId]);
+  } else {
+    await pool.query('DELETE FROM lead_emails WHERE id = ANY($1)', [ids]);
+  }
 }
 
-async function clearLeadPhones() {
-  await pool.query('DELETE FROM lead_phones');
+async function clearLeadPhones(userId = null) {
+  if (userId) {
+    await pool.query('DELETE FROM lead_phones WHERE user_id = $1', [userId]);
+  } else {
+    await pool.query('DELETE FROM lead_phones');
+  }
 }
 
-async function deleteLeadPhones(ids) {
+async function deleteLeadPhones(userId, ids) {
   if (!Array.isArray(ids)) ids = [ids];
   if (ids.length === 0) return;
-  await pool.query('DELETE FROM lead_phones WHERE id = ANY($1)', [ids]);
+  if (userId) {
+    await pool.query('DELETE FROM lead_phones WHERE id = ANY($1) AND user_id = $2', [ids, userId]);
+  } else {
+    await pool.query('DELETE FROM lead_phones WHERE id = ANY($1)', [ids]);
+  }
 }
 
-async function clearLeadSocials() {
-  await pool.query('DELETE FROM lead_socials');
+async function clearLeadSocials(userId = null) {
+  if (userId) {
+    await pool.query('DELETE FROM lead_socials WHERE user_id = $1', [userId]);
+  } else {
+    await pool.query('DELETE FROM lead_socials');
+  }
 }
 
-async function deleteLeadSocials(ids) {
+async function deleteLeadSocials(userId, ids) {
   if (!Array.isArray(ids)) ids = [ids];
   if (ids.length === 0) return;
-  await pool.query('DELETE FROM lead_socials WHERE id = ANY($1)', [ids]);
+  if (userId) {
+    await pool.query('DELETE FROM lead_socials WHERE id = ANY($1) AND user_id = $2', [ids, userId]);
+  } else {
+    await pool.query('DELETE FROM lead_socials WHERE id = ANY($1)', [ids]);
+  }
 }
 
-async function clearCrawledUrls() {
-  await pool.query('DELETE FROM crawled_urls');
+async function clearCrawledUrls(userId = null) {
+  if (userId) {
+    await pool.query('DELETE FROM crawled_urls WHERE user_id = $1', [userId]);
+  } else {
+    await pool.query('DELETE FROM crawled_urls');
+  }
 }
 
 // Resets all crawl-derived data in one transaction: leads, crawled URLs, and crawl history
-async function clearAllLeadData() {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
+async function clearAllLeadData(userId = null) {
+  const client = pool; // use global pool pool.query since nested transactions are not used here
+  if (userId) {
+    await client.query('DELETE FROM lead_emails WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM lead_phones WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM lead_socials WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM crawled_urls WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM crawl_logs WHERE user_id = $1', [userId]);
+  } else {
     await client.query('DELETE FROM lead_emails');
     await client.query('DELETE FROM lead_phones');
     await client.query('DELETE FROM lead_socials');
     await client.query('DELETE FROM crawled_urls');
     await client.query('DELETE FROM crawl_logs');
-    await client.query('COMMIT');
-  } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
-  } finally {
-    client.release();
   }
 }
 
-async function getLeadsOverallSummary() {
-  const urlsRes = await pool.query('SELECT COUNT(*) FROM crawled_urls');
-  const emailsRes = await pool.query('SELECT COUNT(*) FROM lead_emails');
-  const phonesRes = await pool.query('SELECT COUNT(*) FROM lead_phones');
-  const socialsRes = await pool.query('SELECT COUNT(*) FROM lead_socials');
+async function getLeadsOverallSummary(userId = null) {
+  const params = userId ? [userId] : [];
+  const whereClause = userId ? ' WHERE user_id = $1' : '';
+
+  const urlsRes = await pool.query('SELECT COUNT(*) FROM crawled_urls' + whereClause, params);
+  const emailsRes = await pool.query('SELECT COUNT(*) FROM lead_emails' + whereClause, params);
+  const phonesRes = await pool.query('SELECT COUNT(*) FROM lead_phones' + whereClause, params);
+  const socialsRes = await pool.query('SELECT COUNT(*) FROM lead_socials' + whereClause, params);
 
   return {
     totalUrls: parseInt(urlsRes.rows[0].count, 10),
@@ -381,26 +467,42 @@ async function getLeadsOverallSummary() {
   };
 }
 
-async function insertCrawledUrl(crawledUrl) {
+async function insertCrawledUrl(userId, crawledUrl) {
   await pool.query(
-    `INSERT INTO crawled_urls (id, url, title, status, message, keyword, crawl_log_id, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    [crawledUrl.id, crawledUrl.url, crawledUrl.title, crawledUrl.status, crawledUrl.message, crawledUrl.keyword, crawledUrl.crawlLogId || null, crawledUrl.createdAt]
+    `INSERT INTO crawled_urls (id, user_id, url, title, status, message, keyword, crawl_log_id, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [crawledUrl.id, userId, crawledUrl.url, crawledUrl.title, crawledUrl.status, crawledUrl.message, crawledUrl.keyword, crawledUrl.crawlLogId || null, crawledUrl.createdAt]
   );
 }
 
-async function getLogs() {
-  const { rows } = await pool.query('SELECT * FROM crawl_logs ORDER BY "timestamp" ASC');
+async function getLogs(userId = null) {
+  const query = userId 
+    ? 'SELECT * FROM crawl_logs WHERE user_id = $1 ORDER BY "timestamp" ASC'
+    : 'SELECT * FROM crawl_logs ORDER BY "timestamp" ASC';
+  const params = userId ? [userId] : [];
+  const { rows } = await pool.query(query, params);
   return rows.map(rowToLog);
 }
 
-async function getLogsPaginated({ page = 1, limit = 10 } = {}) {
+async function getLogsPaginated({ page = 1, limit = 10, userId = null }) {
   const offset = (page - 1) * limit;
-  const { rows } = await pool.query(
-    'SELECT * FROM crawl_logs ORDER BY "timestamp" DESC LIMIT $1 OFFSET $2',
-    [limit, offset]
-  );
-  const countRes = await pool.query('SELECT COUNT(*) FROM crawl_logs');
+  const params = [];
+  let query = 'SELECT * FROM crawl_logs';
+  let countQuery = 'SELECT COUNT(*) FROM crawl_logs';
+
+  if (userId) {
+    params.push(userId);
+    const userClause = ' WHERE user_id = $1';
+    query += userClause;
+    countQuery += userClause;
+  }
+
+  query += ' ORDER BY "timestamp" DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+  const countParams = [...params];
+  params.push(limit, offset);
+
+  const { rows } = await pool.query(query, params);
+  const countRes = await pool.query(countQuery, countParams);
   return {
     logs: rows.map(rowToLog),
     total: parseInt(countRes.rows[0].count, 10),
@@ -409,16 +511,20 @@ async function getLogsPaginated({ page = 1, limit = 10 } = {}) {
   };
 }
 
-async function addLog(log) {
+async function addLog(userId, log) {
   await pool.query(
-    `INSERT INTO crawl_logs (id, keyword, "timestamp", urls_count, new_emails_count, new_phones_count, new_socials_count)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [log.id, log.keyword, log.timestamp, log.urlsCount, log.newEmailsCount, log.newPhonesCount, log.newSocialsCount]
+    `INSERT INTO crawl_logs (id, user_id, keyword, "timestamp", urls_count, new_emails_count, new_phones_count, new_socials_count)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [log.id, userId, log.keyword, log.timestamp, log.urlsCount, log.newEmailsCount, log.newPhonesCount, log.newSocialsCount]
   );
 }
 
-async function clearLogs() {
-  await pool.query('DELETE FROM crawl_logs');
+async function clearLogs(userId = null) {
+  if (userId) {
+    await pool.query('DELETE FROM crawl_logs WHERE user_id = $1', [userId]);
+  } else {
+    await pool.query('DELETE FROM crawl_logs');
+  }
 }
 
 function rowToUser(row) {
@@ -477,42 +583,6 @@ async function saveSmtpSettings(userId, settings) {
   );
 }
 
-function rowToTemplate(row) {
-  return {
-    id: row.id,
-    name: row.name,
-    subject: row.subject,
-    body: row.body,
-    createdAt: row.created_at.toISOString()
-  };
-}
-
-async function getTemplates() {
-  const { rows } = await pool.query('SELECT * FROM email_templates ORDER BY created_at DESC');
-  return rows.map(rowToTemplate);
-}
-
-async function insertTemplate(template) {
-  await pool.query(
-    `INSERT INTO email_templates (id, name, subject, body, created_at)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [template.id, template.name, template.subject, template.body, template.createdAt || new Date().toISOString()]
-  );
-}
-
-async function updateTemplate(id, template) {
-  await pool.query(
-    `UPDATE email_templates
-     SET name = $1, subject = $2, body = $3
-     WHERE id = $4`,
-    [template.name, template.subject, template.body, id]
-  );
-}
-
-async function deleteTemplate(id) {
-  await pool.query('DELETE FROM email_templates WHERE id = $1', [id]);
-}
-
 module.exports = {
   getLeadEmailsPaginated,
   getLeadEmailsFiltered,
@@ -545,9 +615,5 @@ module.exports = {
   findUserByUsername,
   updateUserPassword,
   getSmtpSettings,
-  saveSmtpSettings,
-  getTemplates,
-  insertTemplate,
-  updateTemplate,
-  deleteTemplate
+  saveSmtpSettings
 };
