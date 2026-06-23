@@ -37,6 +37,9 @@ async function changePassword(req, res) {
   if (!oldPassword || !newPassword) {
     return res.status(400).json({ error: 'Vui lòng nhập mật khẩu hiện tại và mật khẩu mới' });
   }
+  if (oldPassword === newPassword) {
+    return res.status(400).json({ error: 'Mật khẩu mới phải khác mật khẩu hiện tại' });
+  }
   if (newPassword.length < 6) {
     return res.status(400).json({ error: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
   }
