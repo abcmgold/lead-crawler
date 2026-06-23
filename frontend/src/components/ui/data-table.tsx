@@ -100,7 +100,7 @@ export function DataTable<T>({
   const startIndex = pagination ? (pagination.currentPage - 1) * pagination.pageSize : 0
 
   const finalContainerClassName = cn(
-    "rounded-xl border border-white/5 bg-slate-950/20 overflow-hidden",
+    "relative w-full overflow-x-auto glass-panel rounded-2xl shadow-xl border border-white/5",
     scrollableBody && "flex flex-col flex-1 min-h-0",
     containerClassName
   )
@@ -117,7 +117,12 @@ export function DataTable<T>({
 
   return (
     <div className={finalContainerClassName}>
-      <Table className={className} wrapperClassName={finalWrapperClassName} scrollableBody={scrollableBody} minBodyWidth={scrollableBody ? minBodyWidth : undefined}>
+      <Table 
+        className={cn("w-full text-sm text-left text-slate-300 border-collapse", className)} 
+        wrapperClassName={finalWrapperClassName} 
+        scrollableBody={scrollableBody} 
+        minBodyWidth={scrollableBody ? minBodyWidth : undefined}
+      >
         <TableHeader className={cn(
           "bg-slate-900/95 border-b border-white/5 [&_tr]:border-b-0",
           scrollableBody ? "block w-full shrink-0" : "sticky top-0 z-10"

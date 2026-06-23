@@ -583,6 +583,66 @@ async function saveSmtpSettings(userId, settings) {
   );
 }
 
+async function getAllUsers() {
+  const { rows } = await pool.query('SELECT id, username, role, needs_password_change FROM users ORDER BY username ASC');
+  return rows.map(r => ({
+    id: r.id,
+    username: r.username,
+    role: r.role,
+    needsPasswordChange: r.needs_password_change
+  }));
+}
+
+async function getUsersPaginated({ page = 1, limit = 10 }) {
+  const offset = (page - 1) * limit;
+  const { rows } = await pool.query(
+    'SELECT id, username, role, needs_password_change FROM users ORDER BY username ASC LIMIT $1 OFFSET $2',
+    [limit, offset]
+  );
+  const countRes = await pool.query('SELECT COUNT(*) FROM users');
+  return {
+    users: rows.map(r => ({
+      id: r.id,
+      username: r.username,
+      role: r.role,
+      needsPasswordChange: r.needs_password_change
+    })),
+    total: parseInt(countRes.rows[0].count, 10),
+    page,
+    limit
+  };
+}
+
+async function createUser(user) {
+  await pool.query(
+    `INSERT INTO users (id, username, password_hash, role, needs_password_change)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [user.id, user.username, user.passwordHash, user.role, user.needsPasswordChange]
+  );
+}
+
+async function updateUser(id, user) {
+  if (user.passwordHash) {
+    await pool.query(
+      `UPDATE users 
+       SET username = $1, role = $2, password_hash = $3, needs_password_change = $4
+       WHERE id = $5`,
+      [user.username, user.role, user.passwordHash, user.needsPasswordChange, id]
+    );
+  } else {
+    await pool.query(
+      `UPDATE users 
+       SET username = $1, role = $2, needs_password_change = $3
+       WHERE id = $4`,
+      [user.username, user.role, user.needsPasswordChange, id]
+    );
+  }
+}
+
+async function deleteUser(id) {
+  await pool.query('DELETE FROM users WHERE id = $1', [id]);
+}
+
 module.exports = {
   getLeadEmailsPaginated,
   getLeadEmailsFiltered,
@@ -615,5 +675,10 @@ module.exports = {
   findUserByUsername,
   updateUserPassword,
   getSmtpSettings,
-  saveSmtpSettings
+  saveSmtpSettings,
+  getAllUsers,
+  getUsersPaginated,
+  createUser,
+  updateUser,
+  deleteUser
 };

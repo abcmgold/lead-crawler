@@ -5,6 +5,7 @@ import CrawlerTab from './components/CrawlerTab';
 import LeadsTab from './components/LeadsTab';
 import CampaignTab from './components/CampaignTab';
 import SettingsTab from './components/SettingsTab';
+import UsersTab from './components/UsersTab';
 import LoginPage from './components/LoginPage';
 import ConfirmDialog from './components/ConfirmDialog';
 import AppHeader from './components/layout/AppHeader';
@@ -181,6 +182,7 @@ export default function App() {
         <AppHeader
           smtpSettings={smtpSettings}
           username={user.username}
+          userRole={user.role}
           onLogoutClick={() => setShowLogoutConfirm(true)}
         />
 
@@ -230,6 +232,10 @@ export default function App() {
                   showToast={showToast}
                 />
               }
+            />
+            <Route
+              path="/users"
+              element={<UsersTab showToast={showToast} />}
             />
             {/* Catch-all redirect */}
             <Route path="*" element={<Navigate to="/crawler" replace />} />

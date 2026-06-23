@@ -8,6 +8,7 @@ const historyRoutes = require('./history.routes');
 const emailRoutes = require('./email.routes');
 const settingsRoutes = require('./settings.routes');
 const templatesRoutes = require('./templates.routes');
+const usersRoutes = require('./users.routes');
 
 const router = express.Router();
 
@@ -18,5 +19,6 @@ router.use('/history', authenticate, historyRoutes);
 router.use('/send-emails', authenticate, emailRoutes);
 router.use('/settings', authenticate, settingsRoutes);
 router.use('/templates', authenticate, templatesRoutes);
+router.use('/users', authenticate, usersRoutes);
 
 module.exports = router;

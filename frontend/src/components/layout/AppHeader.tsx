@@ -18,11 +18,18 @@ const inactiveNavClass =
 interface AppHeaderProps {
   smtpSettings: SmtpSettings;
   username: string;
+  userRole?: string;
   onLogoutClick: () => void;
 }
 
-export default function AppHeader({ smtpSettings, username, onLogoutClick }: AppHeaderProps) {
+export default function AppHeader({ smtpSettings, username, userRole, onLogoutClick }: AppHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const isAdmin = userRole && userRole.toUpperCase() === 'ADMIN';
+  const headerMenuItems = [
+    ...menuItems,
+    ...(isAdmin ? [{ path: '/users', label: 'Quản lý Users', icon: Users }] : [])
+  ];
 
   return (
     <header className="w-full max-w-7xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6 shrink-0 fixed top-0 left-1/2 -translate-x-1/2 z-50 backdrop-blur-md">
@@ -44,7 +51,7 @@ export default function AppHeader({ smtpSettings, username, onLogoutClick }: App
 
         {/* Navigation pills in the center */}
         <nav className="hidden md:flex items-center gap-1.5 bg-secondary/40 p-1.5 rounded-xl border border-border relative">
-          {menuItems.map((item) => {
+          {headerMenuItems.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink
@@ -82,7 +89,7 @@ export default function AppHeader({ smtpSettings, username, onLogoutClick }: App
       {/* Mobile Navigation Dropdown */}
       {mobileMenuOpen && (
         <nav className="md:hidden flex flex-col gap-1.5 bg-slate-950/90 backdrop-blur-md p-3 mt-3 rounded-2xl border border-white/10 shadow-2xl animate-scale-in">
-          {menuItems.map((item) => {
+          {headerMenuItems.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink

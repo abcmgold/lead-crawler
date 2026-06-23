@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Trash2, ExternalLink, Download } from 'lucide-react';
+import { Trash2, ExternalLink } from 'lucide-react';
 import { LeadEmail, LeadPhone, LeadSocial, HistoryItem } from './types';
 import { apiFetch } from '@/lib/api';
 import { Column } from '@/components/ui/data-table';
@@ -46,7 +46,7 @@ function downloadCSV(filename: string, header: string, rows: string[][]) {
 export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSelectionChange, onClearAll, showToast, onRefresh }: LeadsTabProps) {
   const [crawlLogs, setCrawlLogs] = useState<HistoryItem[]>([]);
   const [selectedLogId, setSelectedLogId] = useState<string>('');
-  
+
   // Selection states for phone and social tabs
   const [selectedPhoneIds, setSelectedPhoneIds] = useState<Set<string>>(new Set());
   const [selectedSocialIds, setSelectedSocialIds] = useState<Set<string>>(new Set());
@@ -61,7 +61,7 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
     show: false,
     title: '',
     description: '',
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   useEffect(() => {
@@ -349,16 +349,14 @@ export default function LeadsTab({ leadsVersion, leadsCount, selectedIds, onSele
         const isFailed = lead.emailStatus.startsWith('Thất bại');
 
         return (
-          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold border font-sans inline-flex items-center gap-1.5 shrink-0 ${
-            isSuccess ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25 shadow-[0_0_12px_rgba(16,185,129,0.05)]' :
-            isFailed ? 'bg-rose-500/10 text-rose-400 border-rose-500/25 shadow-[0_0_12px_rgba(244,63,94,0.05)]' :
-            'bg-slate-850/60 text-slate-400 border-white/5'
-          }`}>
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-              isSuccess ? 'bg-emerald-400 animate-pulse' :
-              isFailed ? 'bg-rose-400' :
-              'bg-slate-500'
-            }`} />
+          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold border font-sans inline-flex items-center gap-1.5 shrink-0 ${isSuccess ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25 shadow-[0_0_12px_rgba(16,185,129,0.05)]' :
+              isFailed ? 'bg-rose-500/10 text-rose-400 border-rose-500/25 shadow-[0_0_12px_rgba(244,63,94,0.05)]' :
+                'bg-slate-850/60 text-slate-400 border-white/5'
+            }`}>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSuccess ? 'bg-emerald-400 animate-pulse' :
+                isFailed ? 'bg-rose-400' :
+                  'bg-slate-500'
+              }`} />
             {lead.emailStatus}
           </span>
         );
